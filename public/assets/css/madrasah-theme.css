@@ -1,0 +1,218 @@
+/* ===========================================================
+   Madrasah Theme - Custom Style for SBAdmin2 + Bootstrap
+   Palette:
+   - Primary Madrasah Green: #2e8b57
+   - Darker Green (Hover/Active): #1f6b40
+   =========================================================== */
+
+/* -----------------------------------------------------------
+   Background Utilities
+   ----------------------------------------------------------- */
+.bg-madrasah {
+  background-color: #2e8b57 !important;
+  color: white !important;
+}
+
+.bg-madrasah-dark {
+  background-color: #1f6b40 !important;
+  color: white !important;
+}
+
+/* -----------------------------------------------------------
+   Text Utilities
+   ----------------------------------------------------------- */
+.text-madrasah {
+  color: #2e8b57 !important;
+}
+
+.text-madrasah-dark {
+  color: #1f6b40 !important;
+}
+
+/* -----------------------------------------------------------
+   Border Utilities
+   ----------------------------------------------------------- */
+.border-madrasah {
+  border-color: #2e8b57 !important;
+}
+
+/* -----------------------------------------------------------
+   Buttons
+   ----------------------------------------------------------- */
+.btn-madrasah {
+  background-color: #2e8b57 !important;
+  color: white !important;
+  border-color: #2e8b57 !important;
+}
+
+.btn-madrasah:hover {
+  background-color: #1f6b40 !important;
+  color: white !important;
+  border-color: #1f6b40 !important;
+}
+
+/* Focus State */
+.btn-madrasah:focus,
+.btn-madrasah.focus {
+  background-color: #1f6b40 !important;
+  border-color: #1f6b40 !important;
+  color: white !important;
+  box-shadow: 0 0 0 0.2rem rgba(46, 139, 87, 0.25) !important;
+}
+
+/* Active / Pressed State */
+.btn-madrasah:active,
+.btn-madrasah.active,
+.show > .btn-madrasah.dropdown-toggle {
+  background-color: #1f6b40 !important;
+  border-color: #1f6b40 !important;
+  color: white !important;
+}
+
+/* Disabled */
+.btn-madrasah.disabled,
+.btn-madrasah:disabled {
+  background-color: #7ab79a !important;
+  border-color: #7ab79a !important;
+  color: white !important;
+}
+
+/* -----------------------------------------------------------
+   Forms: Input Focus Highlight (Madrasah Green)
+   ----------------------------------------------------------- */
+.form-control:focus,
+.custom-select:focus {
+  border-color: #1cc88a !important;
+  box-shadow: 0 0 0 0.2rem rgba(28, 200, 138, 0.25) !important;
+}
+
+/* -----------------------------------------------------------
+   Pagination Color Override (Madrasah Theme)
+   ----------------------------------------------------------- */
+.page-item.active .page-link {
+  background-color: #1cc88a !important;
+  border-color: #1cc88a !important;
+  color: white !important;
+}
+
+.page-link {
+  color: #2e8b57 !important;
+}
+
+.page-link:hover {
+  color: #1f6b40 !important;
+  box-shadow: 0 0 0 0.2rem rgba(28, 200, 138, 0.25) !important;
+}
+
+/* -----------------------------------------------------------
+   Table Header Theme
+   ----------------------------------------------------------- */
+.table-madrasah thead {
+  background-color: #2e8b57 !important;
+  color: white !important;
+}
+
+.table-madrasah thead th {
+  border-color: #1f6b40 !important;
+}
+
+/* Tambahan jika ingin hover row berwarna hijau lembut */
+.table-madrasah tbody tr:hover {
+  background-color: rgba(46, 139, 87, 0.06) !important;
+}
+
+/* -----------------------------------------------------------
+   Cards Border Accent
+   ----------------------------------------------------------- */
+.border-left-madrasah {
+  border-left: 0.25rem solid #2e8b57 !important;
+}
+
+/* ==========================================================
+   Sidebar Toggle Button - Madrasah Theme
+   ========================================================== */
+
+.btn-toggle-madrasah {
+  width: 45px;
+  height: 45px;
+  border-radius: 50% !important;
+  background-color: #e6f3ec; /* hijau sangat lembut */
+  border: 2px solid #2e8b57;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2e8b57 !important;
+  transition: all 0.25s ease-in-out;
+  padding: 0;
+}
+
+.btn-toggle-madrasah i {
+  font-size: 1.2rem;
+}
+
+/* Hover */
+.btn-toggle-madrasah:hover {
+  background-color: #2e8b57 !important;
+  color: white !important;
+  border-color: #2e8b57 !important;
+  text-decoration: none;
+}
+
+/* Focus */
+.btn-toggle-madrasah:focus {
+  box-shadow: 0 0 0 0.25rem rgba(46, 139, 87, 0.35) !important;
+  text-decoration: none;
+}
+
+/* Active (ketika ditekan) */
+.btn-toggle-madrasah:active {
+  background-color: #1f6b40 !important;
+  border-color: #1f6b40 !important;
+  color: white !important;
+  text-decoration: none;
+}
+
+.profile-img {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 4px solid #2e8b57; /* Tema madrasah */
+}
+.profile-img-mini {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid #2e8b57; /* Tema madrasah */
+}
+
+.position-relative {
+  position: relative;
+}
+
+.overlay-hover {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 0.3s;
+}
+
+.position-relative:hover .overlay-hover {
+  opacity: 1;
+}
+
+.overlay-text {
+  text-align: center;
+  font-size: 14px;
+}
