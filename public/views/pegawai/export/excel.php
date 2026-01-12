@@ -54,7 +54,7 @@
 <table>
     <!-- Header Title -->
     <tr>
-        <th colspan="5" class="header-title">SISTEM LAPORAN HARIAN PEGAWAI</th>
+        <th colspan="5" class="header-title">LAPORAN HARIAN PEGAWAI</th>
     </tr>
     <tr>
         <th colspan="5" class="header-title">Rekapitulasi Laporan Kegiatan</th>
@@ -63,12 +63,24 @@
     <!-- Pegawai Info -->
     <tr>
         <td colspan="5" class="info">
-            <strong>Nama Pegawai:</strong> <?= htmlspecialchars($user['nama']) ?>
-            <br>
-            <strong><?= !empty($user['nip']) ? 'NIP' : 'NIK' ?>:</strong> <?= htmlspecialchars($user['nip'] ?: $user['nik']) ?>
-            <br>
+            <strong>Nama Pegawai:</strong> <?= htmlspecialchars($pegawai['nama']) ?><br>
+
+            <?php if (!empty($pegawai['nip'])): ?>
+                <strong>NIP:</strong> <?= htmlspecialchars($pegawai['nip']) ?><br>
+            <?php elseif (!empty($pegawai['nik'])): ?>
+                <strong>NIK:</strong> <?= htmlspecialchars($pegawai['nik']) ?><br>
+            <?php endif; ?>
+
             <strong>Periode:</strong>
-            <?= ($start || $end) ? "$start s/d $end" : "Semua Data" ?>
+            <?php if ($start && $end): ?>
+                <?= htmlspecialchars($start) ?> s/d <?= htmlspecialchars($end) ?>
+            <?php elseif ($start): ?>
+                Dari <?= htmlspecialchars($start) ?> sampai saat ini
+            <?php elseif ($end): ?>
+                Sampai <?= htmlspecialchars($end) ?>
+            <?php else: ?>
+                Semua Periode
+            <?php endif; ?>
         </td>
     </tr>
 

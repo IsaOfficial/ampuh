@@ -40,8 +40,16 @@ class DocumentUploadService
         }
 
         // 5. Pastikan folder ada
-        if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
+        // NORMALISASI PATH
+        $dir = rtrim($dir, DIRECTORY_SEPARATOR);
+        $realDir = realpath($dir) ?: $dir;
+
+        if (!is_dir($realDir)) {
+            mkdir($realDir, 0755, true);
+        }
+
+        if (!is_writable($realDir)) {
+            throw new Exception("Direktori upload tidak writable: {$realDir}");
         }
 
         // 6. Simpan file (TANPA resize)

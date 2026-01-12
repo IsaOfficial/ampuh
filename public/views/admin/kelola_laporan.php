@@ -13,29 +13,41 @@
   <div class="card-body">
     <form class="form-row" method="GET">
       <div class="col-md-3 mb-3">
+        <label class="small text-muted">Cetak Berdasarkan Pegawai</label>
+        <select name="pegawai_id" class="form-control">
+          <option value="">-- Semua Pegawai --</option>
+          <?php foreach ($pegawai_list as $p): ?>
+            <option value="<?= $p['id'] ?>">
+              <?= htmlspecialchars($p['nama']) ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+
+      <!-- <div class="col-md-3 mb-3">
         <label class="small text-muted">Cetak Berdasarkan Kata Kunci</label>
         <input
           type="text"
           name="keyword"
           class="form-control"
           placeholder="Masukkan kata kunci" />
-      </div>
+      </div> -->
 
       <div class="col-md-3 mb-3">
         <label class="small text-muted">Tanggal Awal</label>
         <input type="date" name="start" class="form-control" />
       </div>
 
-      <div class="col-md-3 mb-4">
+      <div class="col-md-3 mb-3">
         <label class="small text-muted">Tanggal Akhir</label>
         <input type="date" name="end" class="form-control" />
       </div>
 
       <!-- Tombol Cetak -->
-      <div class="col-md-3 mb-2 d-flex align-items-center justify-content-end">
+      <div class="col-md-3 mb-3 d-flex align-items-end justify-content-end">
         <div>
           <button
-            type="submit"
+            type=" submit"
             class="btn btn-danger mr-2"
             formaction="laporan/export/pdf"
             formtarget="_blank">
@@ -52,6 +64,7 @@
       </div>
     </form>
   </div>
+
 </div>
 
 <?php if ($flash = Session::getFlash('flash')): ?>
@@ -124,7 +137,7 @@
                   </div>
 
                   <div class="col-md-3 mb-2">
-                    <input type="file" name="bukti[]" class="form-control" />
+                    <input type="file" name="bukti[]" class="form-control" required />
                   </div>
 
                   <div
@@ -231,7 +244,7 @@
                           <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
                         </div>
 
-                        <form method="POST" action="/admin/kelola/laporan/update/<?= $row['kegiatan_id'] ?>" enctype="multipart/form-data">
+                        <form method="POST" action="/admin/kelola/laporan/update" enctype="multipart/form-data">
                           <?= Csrf::input() ?>
                           <div class="modal-body text-left">
 
@@ -304,7 +317,7 @@
                           <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
                         </div>
 
-                        <form method="POST" action="/admin/kelola/laporan/delete/<?= $row['kegiatan_id'] ?>">
+                        <form method="POST" action="/admin/kelola/laporan/delete">
                           <?= Csrf::input() ?>
                           <div class="modal-body text-left">
 

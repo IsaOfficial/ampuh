@@ -4,6 +4,7 @@ ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
 define('BASE_PATH', __DIR__);
+define('PUBLIC_PATH', realpath(__DIR__ . '/public'));
 
 // Config
 require BASE_PATH . '/backend/config/database.php';

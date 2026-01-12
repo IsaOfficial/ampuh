@@ -7,7 +7,7 @@
 <div class="card shadow mb-4 p-4">
   <div class="d-flex align-items-center">
     <img
-      src="<?= $pegawai['foto'] ? '/public/uploads/foto/' . $pegawai['foto'] : '/public/assets/img/avatars/default_profile.svg' ?>"
+      src="<?= $pegawai['foto'] ? '/public/uploads/foto/' . $pegawai['foto'] : 'default_profile.svg' ?>"
       class="rounded-circle profile-img" />
 
     <div class="ml-5">

@@ -12,17 +12,18 @@
 
   <div class="card-body">
     <form class="form-row" method="GET">
-      <div class="col-md-9 mb-3">
+      <!-- <div class="col-md-9 mb-3">
         <label class="small text-muted">Cetak Berdasarkan Kata Kunci Tertentu</label>
         <input
           type="text"
           name="keyword"
           class="form-control"
           placeholder="Cari Nama, NIP, Jabatan..." />
-      </div>
+      </div> -->
 
       <!-- Tombol Cetak -->
-      <div class="col-md-3 mb-2 d-flex align-items-center justify-content-end">
+      <!-- <div class="col-md-3 mb-2 d-flex align-items-center justify-content-end"> -->
+      <div class="col-md-3 mb-2 d-flex">
         <div>
           <button
             type="submit"
@@ -114,36 +115,34 @@
             <div class="modal-body text-center">
 
               <div class="form-group text-center">
-
-                <!-- Foto Profil -->
                 <div class="position-relative d-inline-block my-3">
-                  <img id="previewFoto"
+
+                  <img
                     src="/public/assets/img/avatars/default_profile.svg"
                     alt="Foto Profil"
-                    class="rounded-circle"
+                    class="rounded-circle preview-foto"
                     style="width:120px; height:120px; object-fit:cover; border:2px solid #ccc;">
 
-                  <label for="fotoInput" class="overlay-hover">
+                  <label class="overlay-hover">
                     <div class="overlay-text">
                       <i class="fas fa-camera"></i> Unggah Foto
                     </div>
+
+                    <input
+                      type="file"
+                      name="foto"
+                      accept="image/*"
+                      style="display:none;"
+                      onchange="previewImage(this)">
                   </label>
 
-                  <input type="file"
-                    id="fotoInput"
-                    name="foto"
-                    style="display:none;"
-                    onchange="previewImage(event)">
                 </div>
 
-                <!-- Teks di BAWAH foto -->
-                <div>
-                  <small class="text-muted d-block">
-                    Format file harus .jpg atau .png
-                  </small>
-                </div>
-
+                <small class="text-muted d-block">
+                  Format file harus .jpg atau .png
+                </small>
               </div>
+
 
               <!-- Divider -->
               <hr>
@@ -271,9 +270,9 @@
                   <?= htmlspecialchars(!empty($row['nip']) ? $row['nip'] : $row['nik']); ?>
                 </td>
                 <td><?= htmlspecialchars($row['jabatan']); ?></td>
-                <td><?= htmlspecialchars($row['jenis_kelamin']); ?></td>
-                <td><?= htmlspecialchars($row['email']); ?></td>
-                <td><?= htmlspecialchars($row['no_wa']); ?></td>
+                <td><?= htmlspecialchars($row['jenis_kelamin'] ?? 'Tidak diketahui'); ?></td>
+                <td><?= htmlspecialchars($row['email'] ?? ''); ?></td>
+                <td><?= htmlspecialchars($row['no_wa'] ?? ''); ?></td>
 
                 <td class="text-center align-middle">
                   <div class="btn-group">
@@ -304,7 +303,7 @@
                           <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
                         </div>
 
-                        <form action="/admin/kelola/pegawai/update/<?= $row['id'] ?>" method="POST" enctype="multipart/form-data">
+                        <form action="/admin/kelola/pegawai/update" method="POST" enctype="multipart/form-data">
                           <?= Csrf::input() ?>
                           <div class="modal-body text-center">
 
@@ -312,29 +311,36 @@
                             <input type="hidden" name="id" value="<?= $row['id'] ?>">
 
                             <div class="form-group text-center">
-                              <!-- Foto Profil Lingkaran -->
                               <div class="position-relative d-inline-block my-3">
-                                <img
-                                  id="previewFoto"
-                                  src="<?= $row['foto'] ? '/public/uploads/foto/' . $row['foto'] : '/public/assets/img/avatars/default_profile.svg' ?>"
-                                  alt="Foto Profil Pegawai"
-                                  class="rounded-circle" style="width:120px; height:120px; object-fit:cover; border:2px solid #ccc;">
 
-                                <label for="fotoInput" class="overlay-hover">
+                                <img
+                                  src="<?= $row['foto']
+                                          ? '/public/uploads/foto/' . $row['foto']
+                                          : '/public/assets/img/avatars/default_profile.svg' ?>"
+                                  alt="Foto Profil Pegawai"
+                                  class="rounded-circle preview-foto"
+                                  style="width:120px; height:120px; object-fit:cover; border:2px solid #ccc;">
+
+                                <label class="overlay-hover">
                                   <div class="overlay-text">
                                     <i class="fas fa-camera"></i> Unggah Foto
                                   </div>
+
+                                  <input
+                                    type="file"
+                                    name="foto"
+                                    accept="image/*"
+                                    style="display:none;"
+                                    onchange="previewImage(this)">
                                 </label>
-                                <input type="file" id="fotoInput" name="foto" style="display:none;" onchange="previewImage(event)">
+
                               </div>
 
-                              <!-- Teks di BAWAH foto -->
-                              <div>
-                                <small class="text-muted d-block">
-                                  Format file harus .jpg atau .png
-                                </small>
-                              </div>
+                              <small class="text-muted d-block">
+                                Format file harus .jpg atau .png
+                              </small>
                             </div>
+
 
                             <!-- Divider -->
                             <hr>
@@ -348,7 +354,7 @@
 
                               <div class="form-group col-md-6 mb-3">
                                 <label class="form-label">NIP (Jika Ada)</label>
-                                <input type="text" name="nip" class="form-control" value="<?= htmlspecialchars($row['nip']) ?>">
+                                <input type="text" name="nip" class="form-control" value="<?= htmlspecialchars($row['nip'] ?? '') ?>">
                               </div>
 
                               <div class="form-group col-md-6 mb-3">
@@ -401,12 +407,12 @@
 
                               <div class="form-group col-md-6 mb-3">
                                 <label class="form-label">Email</label>
-                                <input type="email" name="email" class="form-control" value="<?= htmlspecialchars($row['email']) ?>" required>
+                                <input type="email" name="email" class="form-control" value="<?= htmlspecialchars($row['email'] ?? '') ?>">
                               </div>
 
                               <div class="form-group col-md-6 mb-3">
                                 <label class="form-label">No WhatsApp</label>
-                                <input type="text" name="no_wa" value="<?= htmlspecialchars($row['no_wa']) ?>" class="form-control">
+                                <input type="text" name="no_wa" value="<?= htmlspecialchars($row['no_wa'] ?? '') ?>" class="form-control">
                               </div>
 
                             </div>
@@ -432,7 +438,7 @@
                           <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
                         </div>
 
-                        <form method="POST" action="/admin/kelola/pegawai/delete/<?= $row['id'] ?>">
+                        <form method="POST" action="/admin/kelola/pegawai/delete">
                           <?= Csrf::input() ?>
                           <div class="modal-body text-left">
 

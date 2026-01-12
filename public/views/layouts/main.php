@@ -227,13 +227,31 @@
 
   <!-- JS Preview Foto -->
   <script>
-    function previewImage(event) {
-      const reader = new FileReader();
-      reader.onload = function() {
-        const output = document.getElementById('previewFoto');
-        output.src = reader.result;
+    function previewImage(input) {
+      if (!input || !input.files || !input.files[0]) {
+        return;
       }
-      reader.readAsDataURL(event.target.files[0]);
+
+      const modal = input.closest('.modal');
+      if (!modal) {
+        return;
+      }
+
+      const img = modal.querySelector('.preview-foto');
+      if (!img) {
+        return;
+      }
+
+      const file = input.files[0];
+
+      // Optional: validasi tipe file
+      if (!file.type.startsWith('image/')) {
+        alert('File harus berupa gambar');
+        input.value = '';
+        return;
+      }
+
+      img.src = URL.createObjectURL(file);
     }
   </script>
 
@@ -251,10 +269,62 @@
 
   <script src="/public/assets/js/demo/datatables-demo.js"></script>
 
-
   <!-- Chart.js -->
   <script src="/public/assets/vendor/chart.js/Chart.min.js"></script>
 
+  <script>
+    const areaLabels = <?= json_encode($areaChart['labels']) ?>;
+    const areaData = <?= json_encode($areaChart['data']) ?>;
+
+    if (areaLabels.length > 0) {
+      new Chart(document.getElementById("myAreaChart"), {
+        type: "line",
+        data: {
+          labels: areaLabels,
+          datasets: [{
+            label: "Laporan Harian",
+            data: areaData,
+            fill: true,
+            borderColor: "#2e8b57",
+            backgroundColor: "rgba(46,139,87,0.15)",
+            tension: 0.3
+          }]
+        },
+        options: {
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            }
+          }
+        }
+      });
+    }
+  </script>
+
+  <script>
+    new Chart(document.getElementById("myPieChart"), {
+      type: "doughnut",
+      data: {
+        labels: ["Laki-laki", "Perempuan"],
+        datasets: [{
+          data: [
+            <?= (int) $pieChart['laki'] ?>,
+            <?= (int) $pieChart['perempuan'] ?>
+          ],
+          backgroundColor: ["#2e8b57", "#e74a3b"]
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: "bottom"
+          }
+        }
+      }
+    });
+  </script>
 
 </body>
 

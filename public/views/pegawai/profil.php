@@ -15,7 +15,7 @@
       <div class="card-body text-center">
 
         <img
-          src="<?= $pegawai['foto'] ? '/public/uploads/foto/' . $pegawai['foto'] : '/public/assets/img/avatars/default_profile.svg' ?>"
+          src="<?= $pegawai['foto'] ? '/public/uploads/foto/' . $pegawai['foto'] : 'default_profile.svg' ?>"
           class="profile-img mb-3"
           alt="Foto Profil">
 

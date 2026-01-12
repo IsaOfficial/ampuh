@@ -43,9 +43,9 @@
               <p class="mb-4 text-center small text-muted">Aplikasi Monitoring Pegawai dan Guru Madrasah</p>
             </div>
 
-            <?php if (!empty($error)): ?>
-              <div class="alert alert-danger small text-center">
-                <?= htmlspecialchars($error) ?>
+            <?php if ($flash = Session::getFlash('flash')): ?>
+              <div class="alert shadow alert-<?= htmlspecialchars($flash['type']) ?>">
+                <?= htmlspecialchars($flash['message']) ?>
               </div>
             <?php endif; ?>
 
@@ -55,13 +55,17 @@
                 <input
                   type="text"
                   name="identifier"
+                  id="identifier"
                   class="form-control form-control-user"
-                  id="exampleInputEmail"
-                  aria-describedby="emailHelp"
-                  autocomplete="username"
-                  placeholder="Enter NIP/NIK..."
+                  placeholder="Masukkan NIP ASN (18 digit) atau NIK (16 digit)"
+                  inputmode="numeric"
+                  pattern="[0-9]{16}|[0-9]{18}"
+                  minlength="16"
+                  maxlength="18"
+                  autocomplete="off"
                   required />
               </div>
+
               <div class="form-group">
                 <div class="input-group">
                   <input
@@ -70,27 +74,26 @@
                     id="passwordInput"
                     class="form-control form-control-user"
                     autocomplete="current-password"
-                    placeholder="Enter Password..."
+                    placeholder="Masukkan password"
                     required />
+
                   <div class="input-group-append">
                     <button
                       class="btn btn-outline btn-user btn-secondary"
                       type="button"
-                      onclick="togglePassword('passwordInput', this)"
-                      tabindex="-1">
-                      <i class="fas fa-eye"></i>
+                      onclick="togglePassword('passwordInput', this)">
+                      <i class="fas fa-eye" aria-hidden="true"></i>
                     </button>
                   </div>
                 </div>
               </div>
+
               <button type="submit" class="btn-madrasah btn-user btn-block">
                 Login
               </button>
 
-
               <hr />
             </form>
-
 
             <!-- Footer -->
             <div class="text-center small text-muted">

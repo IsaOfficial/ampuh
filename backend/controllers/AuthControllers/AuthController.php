@@ -2,44 +2,19 @@
 
 class AuthController
 {
-    private PegawaiModel $pegawai;
+    private AuthService $auth;
 
     public function __construct()
     {
-        $this->pegawai = new PegawaiModel();
-    }
-
-    private function authenticate(string $identifier, string $password): array
-    {
-        $identifier = trim($identifier);
-
-        if ($identifier === '' || $password === '') {
-            return [
-                'success' => false,
-                'message' => 'NIP/NIK dan password wajib diisi.'
-            ];
-        }
-
-        $user = $this->pegawai->findByNipOrNik($identifier);
-
-        if (!$user || !password_verify($password, $user['password'])) {
-            return [
-                'success' => false,
-                'message' => 'NIP/NIK atau password salah.'
-            ];
-        }
-
-        unset($user['password']);
-
-        return [
-            'success' => true,
-            'user' => $user
-        ];
+        $this->auth = new AuthService(
+            new PegawaiModel(),
+            new AdminModel()
+        );
     }
 
     public function processLogin(): void
     {
-        $result = $this->authenticate(
+        $result = $this->auth->authenticate(
             $_POST['identifier'] ?? '',
             $_POST['password'] ?? ''
         );
@@ -55,16 +30,13 @@ class AuthController
 
         Session::regenerate();
 
-        $user = $result['user'];
-
-        // SESSION MINIMAL
         Session::set('user', [
-            'id'   => $user['id'],
-            'role' => $user['role']
+            'id'   => $result['user']['id'],
+            'role' => $result['user']['role']
         ]);
 
         header(
-            $user['role'] === 'admin'
+            $result['user']['role'] === 'admin'
                 ? 'Location: /admin/dashboard'
                 : 'Location: /pegawai/dashboard'
         );
@@ -74,6 +46,7 @@ class AuthController
     public function logout(): void
     {
         Session::destroy();
+        Session::regenerate();
         header('Location: /login');
         exit;
     }
