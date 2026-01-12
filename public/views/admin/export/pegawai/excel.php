@@ -11,12 +11,12 @@
     </thead>
 
     <tbody>
-        <?php if (empty($data)): ?>
+        <?php if (empty($pegawai)): ?>
             <tr>
                 <td colspan="7" style="text-align:center;">Tidak ada data</td>
             </tr>
         <?php else: ?>
-            <?php foreach ($data as $p): ?>
+            <?php foreach ($pegawai as $p): ?>
                 <tr>
                     <td><?= $p['nama'] ?></td>
                     <td>'

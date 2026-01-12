@@ -27,19 +27,19 @@ $router->group('/pegawai', function ($r) {
     $r->get('/dashboard', [PegawaiController::class, 'dashboard']);
 
     // Laporan
-    $r->get('/laporan', [PegawaiController::class, 'laporan']);
+    $r->get('/laporan', [PegawaiLaporanController::class, 'riwayatLaporan']);
     $r->post('/laporan/store', [PegawaiLaporanController::class, 'create']);
-    $r->post('/laporan/update/{id}', [PegawaiLaporanController::class, 'update']);
-    $r->post('/laporan/delete/{id}', [PegawaiLaporanController::class, 'delete']);
+    $r->post('/laporan/update', [PegawaiLaporanController::class, 'update']);
+    $r->post('/laporan/delete', [PegawaiLaporanController::class, 'delete']);
 
     // Export
-    $r->get('/laporan/export/pdf', [PegawaiLaporanController::class, 'exportPdf']);
-    $r->get('/laporan/export/excel', [PegawaiLaporanController::class, 'exportExcel']);
+    $r->get('/laporan/export/pdf', [PegawaiLaporanExportController::class, 'exportPdf']);
+    $r->get('/laporan/export/excel', [PegawaiLaporanExportController::class, 'exportExcel']);
 
     // Profil
-    $r->get('/profil', [PegawaiController::class, 'profil']);
-    $r->post('/profil/update', [PegawaiController::class, 'updateProfil']);
-    $r->post('/profil/update-foto', [PegawaiController::class, 'updateFoto']);
+    $r->get('/profil', [PegawaiProfilController::class, 'profil']);
+    $r->post('/profil/update', [PegawaiProfilController::class, 'updateProfil']);
+    $r->post('/profil/update-foto', [PegawaiProfilController::class, 'updateFoto']);
 }, ['auth', 'role:pegawai', 'csrf']);
 
 
@@ -49,28 +49,28 @@ $router->group('/pegawai', function ($r) {
 $router->group('/admin', function ($r) {
 
     // Dashboard
-    $r->get('/dashboard', [AdminController::class, 'index']);
+    $r->get('/dashboard', [AdminDashboardController::class, 'dashboard']);
 
     // Kelola Laporan
-    $r->get('/kelola/laporan', [AdminLaporanController::class, 'index']);
+    $r->get('/kelola/laporan', [AdminLaporanController::class, 'kelolaLaporan']);
     $r->post('/kelola/laporan/create', [AdminLaporanController::class, 'create']);
-    $r->post('/kelola/laporan/update/{id}', [AdminLaporanController::class, 'update']);
-    $r->post('/kelola/laporan/delete/{id}', [AdminLaporanController::class, 'delete']);
+    $r->post('/kelola/laporan/update', [AdminLaporanController::class, 'update']);
+    $r->post('/kelola/laporan/delete', [AdminLaporanController::class, 'delete']);
 
     // Export Laporan
-    $r->get('/kelola/laporan/export/pdf', [AdminLaporanController::class, 'exportPdf']);
-    $r->get('/kelola/laporan/export/excel', [AdminLaporanController::class, 'exportExcel']);
+    $r->get('/kelola/laporan/export/pdf', [AdminLaporanExportController::class, 'exportPdf']);
+    $r->get('/kelola/laporan/export/excel', [AdminLaporanExportController::class, 'exportExcel']);
 
     // Kelola Pegawai
-    $r->get('/kelola/pegawai', [AdminPegawaiController::class, 'index']);
+    $r->get('/kelola/pegawai', [AdminPegawaiController::class, 'kelolaPegawai']);
     $r->post('/kelola/pegawai/create', [AdminPegawaiController::class, 'create']);
-    $r->post('/kelola/pegawai/update/{id}', [AdminPegawaiController::class, 'update']);
-    $r->post('/kelola/pegawai/delete/{id}', [AdminPegawaiController::class, 'delete']);
+    $r->post('/kelola/pegawai/update', [AdminPegawaiController::class, 'update']);
+    $r->post('/kelola/pegawai/delete', [AdminPegawaiController::class, 'delete']);
 
     // Export Pegawai
-    $r->get('/kelola/pegawai/export/pdf', [AdminPegawaiController::class, 'exportPdf']);
-    $r->get('/kelola/pegawai/export/excel', [AdminPegawaiController::class, 'exportExcel']);
+    $r->get('/kelola/pegawai/export/pdf', [AdminPegawaiExportController::class, 'exportPdf']);
+    $r->get('/kelola/pegawai/export/excel', [AdminPegawaiExportController::class, 'exportExcel']);
 
     // Import Pegawai
-    $r->post('/kelola/pegawai/import', [AdminPegawaiController::class, 'importPegawai']);
+    $r->post('/kelola/pegawai/import', [AdminPegawaiImportController::class, 'importPegawai']);
 }, ['auth', 'role:admin', 'csrf']);

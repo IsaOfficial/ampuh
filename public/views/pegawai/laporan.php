@@ -112,20 +112,20 @@
                   <div class="btn-group">
                     <button class="btn btn-warning btn-sm"
                       data-toggle="modal"
-                      data-target="#editModal-<?= $row['id'] ?>">
+                      data-target="#editModal-<?= $row['kegiatan_id'] ?>">
                       <i class="fas fa-edit"></i>
                     </button>
 
                     <button class="btn btn-danger btn-sm ml-1"
                       data-toggle="modal"
-                      data-target="#deleteModal-<?= $row['id'] ?>">
+                      data-target="#deleteModal-<?= $row['kegiatan_id'] ?>">
                       <i class="fas fa-trash"></i>
                     </button>
 
                   </div>
 
                   <!-- Modal Edit -->
-                  <div class="modal fade" id="editModal-<?= $row['id'] ?>" tabindex="-1" aria-hidden="true">
+                  <div class="modal fade" id="editModal-<?= $row['kegiatan_id'] ?>" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog">
                       <div class="modal-content">
 
@@ -134,12 +134,12 @@
                           <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
                         </div>
 
-                        <form method="POST" action="/pegawai/laporan/update/<?= $row['id'] ?>" enctype="multipart/form-data">
+                        <form method="POST" action="/pegawai/laporan/update" enctype="multipart/form-data">
                           <?= Csrf::input() ?>
                           <div class="modal-body text-left">
 
                             <!-- Hidden ID -->
-                            <input type="hidden" name="id" value="<?= $row['id'] ?>">
+                            <input type="hidden" name="id" value="<?= $row['kegiatan_id'] ?>">
 
                             <div class="form-group">
                               <label>Tanggal</label>
@@ -187,7 +187,7 @@
                   <!-- END MODAL EDIT -->
 
                   <!-- MODAL HAPUS KHUSUS RECORD INI -->
-                  <div class="modal fade" id="deleteModal-<?= $row['id'] ?>" tabindex="-1" aria-hidden="true">
+                  <div class="modal fade" id="deleteModal-<?= $row['kegiatan_id'] ?>" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog">
                       <div class="modal-content">
 
@@ -197,12 +197,12 @@
                         </div>
 
                         <!-- Form langsung mengirim ke route dengan id -->
-                        <form method="POST" action="/pegawai/laporan/delete/<?= $row['id'] ?>">
+                        <form method="POST" action="/pegawai/laporan/delete">
                           <?= Csrf::input() ?>
                           <div class="modal-body text-left">
 
                             <!-- optional: kirim id via POST juga -->
-                            <input type="hidden" name="id" value="<?= $row['id'] ?>">
+                            <input type="hidden" name="id" value="<?= $row['kegiatan_id'] ?>">
 
                             <p>Yakin ingin menghapus laporan kegiatan
                               <strong><?= htmlspecialchars($row['kegiatan']) ?></strong>

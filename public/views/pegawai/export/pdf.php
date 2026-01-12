@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Laporan Kegiatan Pegawai</title>
+    <title><?= $title ?></title>
     <style>
         body {
             font-family: "Arial", Helvetica, sans-serif;
@@ -92,18 +92,29 @@
 <body onload="window.print()">
 
     <div class="header">
-        <h2>SISTEM LAPORAN HARIAN PEGAWAI</h2>
+        <h2>LAPORAN HARIAN PEGAWAI</h2>
         <h4>Rekapitulasi Laporan Kegiatan</h4>
     </div>
 
     <div class="info">
-        <p><strong>Nama Pegawai:</strong> <?= htmlspecialchars($user['nama']) ?></p>
-        <p>
-            <strong><?= !empty($user['nip']) ? 'NIP' : 'NIK' ?>:</strong> <?= htmlspecialchars($user['nip'] ?: $user['nik']) ?>
-        </p>
-        <p><strong>Periode:</strong>
-            <?= ($start && $end) ? "$start s/d $end" : "Semua Data" ?>
-        </p>
+        <strong>Nama Pegawai:</strong> <?= htmlspecialchars($pegawai['nama']) ?><br>
+
+        <?php if (!empty($pegawai['nip'])): ?>
+            <strong>NIP:</strong> <?= htmlspecialchars($pegawai['nip']) ?><br>
+        <?php elseif (!empty($pegawai['nik'])): ?>
+            <strong>NIK:</strong> <?= htmlspecialchars($pegawai['nik']) ?><br>
+        <?php endif; ?>
+
+        <strong>Periode:</strong>
+        <?php if ($start && $end): ?>
+            <?= htmlspecialchars($start) ?> s/d <?= htmlspecialchars($end) ?>
+        <?php elseif ($start): ?>
+            Dari <?= htmlspecialchars($start) ?> sampai saat ini
+        <?php elseif ($end): ?>
+            Sampai <?= htmlspecialchars($end) ?>
+        <?php else: ?>
+            Semua Periode
+        <?php endif; ?>
     </div>
 
     <table>
@@ -154,9 +165,9 @@
         Jepara, <?= date('d M Y') ?>
         <div class="signature" style="margin-top: 50px; text-align: right;">
             ____________________________<br>
-            <span class="signature-name"><?= htmlspecialchars($user['nama']) ?></span><br>
+            <span class="signature-name"><?= htmlspecialchars($pegawai['nama']) ?></span><br>
             <span class="signature-id">
-                <?= !empty($user['nip']) ? 'NIP. ' . htmlspecialchars($user['nip']) : 'NIK. ' . htmlspecialchars($user['nik'] ?? '-') ?>
+                <?= !empty($pegawai['nip']) ? 'NIP. ' . htmlspecialchars($pegawai['nip']) : 'NIK. ' . htmlspecialchars($pegawai['nik'] ?? '-') ?>
             </span>
         </div>
     </div>

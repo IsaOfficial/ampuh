@@ -3,122 +3,144 @@
 class AdminPegawaiService
 {
     public function __construct(
-        private PegawaiModel $pegawai,
+        private PegawaiModel $pegawaiModel,
         private ImageUploadService $image,
-        private string $uploadDir = __DIR__ . '/../../../public/uploads/foto/'
+        private string $uploadDir = PUBLIC_PATH . '/uploads/foto',
     ) {}
 
-    private function validate(array $data, bool $isNew = false): void
+    public function create(array $input): void
     {
-        // Nama wajib diisi
-        if (empty(trim($data['nama'] ?? ''))) {
-            throw new Exception("Nama wajib diisi.");
+        // 1. Validasi & normalisasi
+        $data = PegawaiValidator::validateCreate($input);
+
+        // 2. Cek duplikat (domain rule)
+        if ($this->pegawaiModel->existsByNik($data['nik'])) {
+            throw new Exception("NIK sudah terdaftar.");
         }
 
-        // Email wajib untuk pegawai baru
-        if ($isNew && empty(trim($data['email'] ?? ''))) {
-            throw new Exception("Email wajib diisi.");
+        if (!empty($data['nip']) && $this->pegawaiModel->existsByNip($data['nip'])) {
+            throw new Exception("NIP sudah terdaftar.");
         }
 
-        if (!empty($data['email']) && !filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-            throw new Exception("Format email tidak valid.");
+        if (!empty($data['email']) && $this->pegawaiModel->existsByEmail($data['email'])) {
+            throw new Exception("Email sudah terdaftar.");
         }
 
-        if (!empty($data['no_wa']) && !preg_match('/^\+?\d+$/', $data['no_wa'])) {
-            throw new Exception("Nomor WhatsApp tidak valid.");
-        }
+        // 3. Hash password
+        $data['password'] = password_hash(
+            $data['password'],
+            PASSWORD_DEFAULT
+        );
 
-        $allowedGender = ['Laki-laki', 'Perempuan', 'Tidak disebutkan'];
-        if (!empty($data['jenis_kelamin']) && !in_array($data['jenis_kelamin'], $allowedGender, true)) {
-            throw new Exception("Jenis kelamin tidak valid.");
-        }
-
-        if (!empty($data['password']) && strlen($data['password']) < 6) {
-            throw new Exception("Password minimal 6 karakter.");
-        }
+        // 4. Persist
+        $this->pegawaiModel->create($data);
     }
 
-    public function create(array $data): void
-    {
-        $this->validate($data, true);
-
-        $pegawaiData = [
-            'nama'          => trim($data['nama']),
-            'nip'           => trim($data['nip'] ?? null),
-            'nik'           => trim($data['nik']),
-            'jabatan'       => trim($data['jabatan'] ?? 'Tidak diketahui'),
-            'email'         => trim($data['email'] ?? null),
-            'password'      => password_hash($data['password'], PASSWORD_DEFAULT),
-            'no_wa'         => trim($data['no_wa'] ?? null),
-            'jenis_kelamin' => $data['jenis_kelamin'] ?? 'Tidak diketahui',
-            'role'          => $data['role'] ?? 'pegawai',
-            'foto'          => $data['foto'] ?? 'default_profile.svg',
-        ];
-
-        $this->pegawai->create($pegawaiData);
-    }
-
-    public function update(int $id, array $data): void
-    {
-        $pegawai = $this->pegawai->findById($id);
+    public function update(
+        int $id,
+        array $input,
+        ?array $file = null
+    ): void {
+        $pegawai = $this->pegawaiModel->findPegawaiById($id);
         if (!$pegawai) {
             throw new Exception("Pegawai tidak ditemukan.");
         }
 
-        $this->validate($data);
+        // 1. Validasi & normalisasi input teks
+        $data = PegawaiValidator::validateUpdate($input);
 
-        $updateData = [
-            'nama'          => trim($data['nama']),
-            'nip'           => trim($data['nip'] ?? null),
-            'nik'           => trim($data['nik']),
-            'jabatan'       => trim($data['jabatan'] ?? 'Tidak diketahui'),
-            'email'         => trim($data['email'] ?? null),
-            'password'      => password_hash($data['password'], PASSWORD_DEFAULT),
-            'no_wa'         => trim($data['no_wa'] ?? null),
-            'jenis_kelamin' => $data['jenis_kelamin'] ?? 'Tidak diketahui',
-            'role'          => $data['role'] ?? 'pegawai',
-            'foto'          => $data['foto'] ?? 'default_profile.svg',
-        ];
-
-        if (!empty($data['password'])) {
-            $updateData['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
+        // 2. Cek duplikat (jika berubah)
+        if (!empty($data['nik']) && $data['nik'] !== $pegawai['nik']) {
+            if ($this->pegawaiModel->existsByNik($data['nik'])) {
+                throw new Exception("NIK sudah terdaftar.");
+            }
         }
 
-        $this->pegawai->update($id, $updateData);
+        if (!empty($data['nip']) && $data['nip'] !== $pegawai['nip']) {
+            if ($this->pegawaiModel->existsByNip($data['nip'])) {
+                throw new Exception("NIP sudah terdaftar.");
+            }
+        }
+
+        if (!empty($data['email']) && $data['email'] !== $pegawai['email']) {
+            if ($this->pegawaiModel->existsByEmail($data['email'])) {
+                throw new Exception("Email sudah terdaftar.");
+            }
+        }
+
+        // 3. Password (opsional)
+        if (!empty($data['password'])) {
+            $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
+        } else {
+            unset($data['password']);
+        }
+
+        // 4. Normalisasi field opsional (KOSONG → NULL)
+        foreach (['email', 'no_wa', 'nip'] as $field) {
+            if (array_key_exists($field, $data)) {
+                $data[$field] = trim((string) $data[$field]) === ''
+                    ? null
+                    : trim($data[$field]);
+            }
+        }
+
+        // 5. Foto (opsional)
+        if (
+            $file &&
+            isset($file['error']) &&
+            $file['error'] === UPLOAD_ERR_OK
+        ) {
+            $fotoBaru = $this->image->upload($file, $this->uploadDir);
+            $data['foto'] = $fotoBaru;
+
+            // cleanup foto lama (best effort)
+            if (
+                !empty($pegawai['foto']) &&
+                $pegawai['foto'] !== 'default_profile.svg'
+            ) {
+                try {
+                    $this->image->delete($this->uploadDir, $pegawai['foto']);
+                } catch (Throwable $e) {
+                    // log only
+                }
+            }
+        } else {
+            // tidak upload → pakai foto lama
+            $data['foto'] = $pegawai['foto'];
+        }
+
+        // 6. Jangan ubah role
+        unset($data['role']);
+
+        // 7. Persist (TANPA array_filter)
+        $this->pegawaiModel->update($id, $data);
     }
 
     public function delete(int $id): void
     {
-        $pegawai = $this->pegawai->findById($id);
+        $pegawai = $this->pegawaiModel->findPegawaiById($id);
         if (!$pegawai) {
             throw new Exception("Pegawai tidak ditemukan.");
         }
 
-        if (!empty($pegawai['foto']) && $pegawai['foto'] !== 'default_profile.svg') {
-            $this->image->delete($this->uploadDir, $pegawai['foto']);
+        // 1. Hapus record DB terlebih dahulu
+        $this->pegawaiModel->delete($id);
+
+        // 2. Cleanup file (best effort)
+        if (
+            !empty($pegawai['foto']) &&
+            $pegawai['foto'] !== 'default_profile.svg'
+        ) {
+            try {
+                $this->image->delete($this->uploadDir, $pegawai['foto']);
+            } catch (Throwable $e) {
+                // optional: log error, jangan lempar ulang
+            }
         }
-
-        $this->pegawai->delete($id);
-    }
-
-    public function updateFoto(int $id, array $file): void
-    {
-        $pegawai = $this->pegawai->findById($id);
-        if (!$pegawai) {
-            throw new Exception("Pegawai tidak ditemukan.");
-        }
-
-        $fotoBaru = $this->image->upload($file, $this->uploadDir);
-
-        if (!empty($pegawai['foto']) && $pegawai['foto'] !== 'default_profile.svg') {
-            $this->image->delete($this->uploadDir, $pegawai['foto']);
-        }
-
-        $this->pegawai->update($id, ['foto' => $fotoBaru]);
     }
 
     public function getAll(?string $keyword = null): array
     {
-        return $this->pegawai->getAll($keyword);
+        return $this->pegawaiModel->getAllPegawai($keyword);
     }
 }

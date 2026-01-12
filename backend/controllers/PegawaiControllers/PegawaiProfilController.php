@@ -7,15 +7,27 @@ class PegawaiProfilController
 
     public function __construct()
     {
+        $pegawaiModel = new PegawaiModel();
+
         $this->authService = new AuthService(
-            new PegawaiModel(),
+            $pegawaiModel,
             new AdminModel()
         );
 
         $this->pegawaiService = new PegawaiService(
-            new PegawaiModel(),
+            $pegawaiModel,
             new ImageUploadService()
         );
+    }
+
+    public function profil(): void
+    {
+        $pegawai = $this->authService->pegawai();
+
+        view('pegawai/profil', [
+            'title'   => 'Profil Pegawai',
+            'pegawai' => $pegawai,
+        ]);
     }
 
     public function updateProfil(): void
@@ -23,15 +35,18 @@ class PegawaiProfilController
         try {
             $pegawai = $this->authService->pegawai();
 
-            $this->pegawaiService->update($pegawai['id'], $_POST);
+            $this->pegawaiService->updateProfil(
+                $pegawai['id'],
+                $_POST
+            );
 
             Session::flash('flash', [
-                'type' => 'success',
+                'type'    => 'success',
                 'message' => 'Profil berhasil diperbarui.'
             ]);
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             Session::flash('flash', [
-                'type' => 'danger',
+                'type'    => 'danger',
                 'message' => $e->getMessage()
             ]);
         }
@@ -52,20 +67,23 @@ class PegawaiProfilController
                 throw new Exception("Tidak ada file yang diunggah.");
             }
 
-            $this->pegawaiService->updateFotoProfil($pegawai['id'], $_FILES['foto']);
+            $this->pegawaiService->updateFoto(
+                $pegawai['id'],
+                $_FILES['foto']
+            );
 
             Session::flash('flash', [
-                'type' => 'success',
+                'type'    => 'success',
                 'message' => 'Foto profil berhasil diperbarui.'
             ]);
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             Session::flash('flash', [
-                'type' => 'danger',
+                'type'    => 'danger',
                 'message' => $e->getMessage()
             ]);
         }
 
-        header("Location: /pegawai/profil");
+        header('Location: /pegawai/profil');
         exit;
     }
 }
