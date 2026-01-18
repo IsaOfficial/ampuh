@@ -33,5 +33,10 @@ $router = new Router();
 // Routes
 require BASE_PATH . '/backend/routes/web.php';
 
+// AdminSeeder
+require BASE_PATH . '/backend/seeders/AdminSeeder.php';
+$seeder = new AdminSeeder();
+$seeder->run($pdo);
+
 // Run
 $router->run();
