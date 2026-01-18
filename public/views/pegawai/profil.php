@@ -15,7 +15,7 @@
       <div class="card-body text-center">
 
         <img
-          src="<?= $pegawai['foto'] ? '/public/uploads/foto/' . $pegawai['foto'] : 'default_profile.svg' ?>"
+          src="<?= $pegawai['foto'] ? '/public/uploads/foto/' . $pegawai['foto'] : '/public/uploads/foto/default_profile.svg' ?>"
           class="profile-img mb-3"
           alt="Foto Profil">
 
@@ -74,7 +74,7 @@
             <input type="text" class="form-control"
               name="nip"
               id="nip"
-              value="<?= htmlspecialchars($pegawai['nip']); ?>" readonly />
+              value="<?= $pegawai['nip'] ? htmlspecialchars($pegawai['nip']) : '-'; ?>" readonly />
           </div>
 
           <div class="form-group">
@@ -126,7 +126,7 @@
             <label for="email">Email</label>
             <input type="email" id="email" class="form-control"
               name="email"
-              value="<?= htmlspecialchars($pegawai['email']); ?>" />
+              value="<?= $pegawai['email'] ? htmlspecialchars($pegawai['email']) : ''; ?>" />
           </div>
 
           <div class="form-group">
@@ -134,7 +134,7 @@
             <input type="text" class="form-control"
               name="no_wa"
               id="no_wa"
-              value="<?= htmlspecialchars($pegawai['no_wa']); ?>" />
+              value="<?= $pegawai['no_wa'] ? htmlspecialchars($pegawai['no_wa']) : ''; ?>" />
           </div>
 
           <div class="d-flex justify-content-center mt-4">
