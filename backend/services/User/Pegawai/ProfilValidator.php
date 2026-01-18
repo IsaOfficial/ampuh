@@ -102,6 +102,10 @@ class PegawaiProfileValidator
             self::email($data['email']);
         }
 
+        if (!empty($data['password'])) {
+            self::password($data['password']);
+        }
+
         self::gender($data['jenis_kelamin'] ?? null);
         self::phone($data['no_wa'] ?? null);
 
@@ -123,6 +127,13 @@ class PegawaiProfileValidator
     {
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             throw new Exception("Format email tidak valid.");
+        }
+    }
+
+    private static function password(string $password): void
+    {
+        if (strlen($password) < 6) {
+            throw new Exception("Password minimal 6 karakter.");
         }
     }
 
@@ -149,6 +160,7 @@ class PegawaiProfileValidator
         return [
             'nama'          => self::normalizeName($data['nama']),
             'email'         => trim($data['email'] ?? null),
+            'password'      => $data['password'] ?? null,
             'jenis_kelamin' => $data['jenis_kelamin'] ?? 'Tidak diketahui',
             'no_wa'         => trim($data['no_wa'] ?? null),
         ];

@@ -8,6 +8,88 @@ class PegawaiValidator
         'Tidak diketahui'
     ];
 
+    private const DEGREE_MAP = [
+        // DIPLOMA
+        'A.Md'        => 'A.Md.',
+        'A.Md.Ak'     => 'A.Md.Ak.',
+        'A.Md.Kom'    => 'A.Md.Kom.',
+        'A.Md.T'      => 'A.Md.T.',
+        'A.Md.Kes'    => 'A.Md.Kes.',
+        'A.Md.Farm'   => 'A.Md.Farm.',
+        'A.Md.Kep'    => 'A.Md.Kep.',
+        'A.Md.Keb'    => 'A.Md.Keb.',
+
+        // SARJANA
+        'S.Ag'        => 'S.Ag.',
+        'S.Ars'       => 'S.Ars.',
+        'S.E'         => 'S.E.',
+        'S.Farm'      => 'S.Farm.',
+        'S.Gz'        => 'S.Gz.',
+        'S.H'         => 'S.H.',
+        'S.Hum'       => 'S.Hum.',
+        'S.I.Kom'     => 'S.I.Kom.',
+        'S.IP'        => 'S.IP.',
+        'S.Ked'       => 'S.Ked.',
+        'S.Kep'       => 'S.Kep.',
+        'S.KG'        => 'S.KG.',
+        'S.Kom'       => 'S.Kom.',
+        'S.M'         => 'S.M.',
+        'S.P'         => 'S.P.',
+        'S.Pd'        => 'S.Pd.',
+        'S.Pd.I'      => 'S.Pd.I.',
+        'S.Psi'       => 'S.Psi.',
+        'S.S'         => 'S.S.',
+        'S.Si'        => 'S.Si.',
+        'S.Sn'        => 'S.Sn.',
+        'S.Sos'       => 'S.Sos.',
+        'S.ST'        => 'S.ST.',
+        'S.T'         => 'S.T.',
+
+        // PROFESI
+        'Ir'          => 'Ir.',
+        'Dr'          => 'Dr.',
+        'Drs'         => 'Drs.',
+        'Dra'         => 'Dra.',
+        'Drg'         => 'drg.',
+        'Dr.'         => 'Dr.',
+        'dr'          => 'dr.',
+        'Apt'         => 'Apt.',
+        'Ners'        => 'Ners.',
+        'Bidan'       => 'Bdn.',
+        'Psikolog'    => 'Psikolog',
+
+        // MAGISTER
+        'M.Ag'        => 'M.Ag.',
+        'M.E'         => 'M.E.',
+        'M.Farm'      => 'M.Farm.',
+        'M.H'         => 'M.H.',
+        'M.Hum'       => 'M.Hum.',
+        'M.Ked'       => 'M.Ked.',
+        'M.Kes'       => 'M.Kes.',
+        'M.Kom'       => 'M.Kom.',
+        'M.M'         => 'M.M.',
+        'M.Pd'        => 'M.Pd.',
+        'M.Psi'       => 'M.Psi.',
+        'M.Sc'        => 'M.Sc.',
+        'M.Si'        => 'M.Si.',
+        'M.Sn'        => 'M.Sn.',
+        'M.T'         => 'M.T.',
+
+        // DOKTOR / INTERNASIONAL
+        'Ph.D'        => 'Ph.D',
+
+        // KEAGAMAAN
+        'H'           => 'H.',
+        'Hj'          => 'Hj.',
+        'KH'          => 'KH.',
+        'K.H'         => 'KH.',
+        'Habib'       => 'Habib',
+
+        // KEGURUAN
+        'Gr'          => 'Gr.',
+        'Guru Besar'  => 'Guru Besar',
+    ];
+
     public static function validateCreate(array $data): array
     {
         self::require($data, 'nama');

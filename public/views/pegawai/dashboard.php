@@ -7,14 +7,15 @@
 <div class="card shadow mb-4 p-4">
   <div class="d-flex align-items-center">
     <img
-      src="<?= $pegawai['foto'] ? '/public/uploads/foto/' . $pegawai['foto'] : 'default_profile.svg' ?>"
+      src="<?= $pegawai['foto'] ? '/public/uploads/foto/' . $pegawai['foto'] : '/public/uploads/foto/default_profile.svg' ?>"
       class="rounded-circle profile-img" />
 
     <div class="ml-5">
       <h2 class="mb-2 font-weight-bold text-madrasah text-uppercase">
         <?= htmlspecialchars($pegawai['nama']); ?>
       </h2>
-      <p class="mb-1">NIP : <?= htmlspecialchars($pegawai['nip']); ?></p>
+      <p class="mb-1">
+        <?= $pegawai['nip'] ? 'NIP : ' . htmlspecialchars($pegawai['nip']) : 'NIK : ' . htmlspecialchars($pegawai['nik']); ?></p>
       <p class="mb-1">Jabatan : <?= htmlspecialchars($pegawai['jabatan']); ?></p>
 
     </div>

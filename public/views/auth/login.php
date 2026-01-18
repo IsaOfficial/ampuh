@@ -44,7 +44,7 @@
             </div>
 
             <?php if ($flash = Session::getFlash('flash')): ?>
-              <div class="alert shadow alert-<?= htmlspecialchars($flash['type']) ?>">
+              <div class="alert shadow alert-danger">
                 <?= htmlspecialchars($flash['message']) ?>
               </div>
             <?php endif; ?>
