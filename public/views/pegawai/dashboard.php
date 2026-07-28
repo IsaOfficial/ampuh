@@ -1,7 +1,9 @@
 <?php ob_start(); ?>
 <?php
-$today = new DateTimeImmutable('today');
+$appTimezone = new DateTimeZone('Asia/Jakarta');
+$today = new DateTimeImmutable('today', $appTimezone);
 $minimumReportDate = $today->modify('-3 days');
+$oldCreateInput = Session::getFlash('old_pegawai_laporan_create') ?: [];
 ?>
 
 <!-- Judul Halaman -->
@@ -70,7 +72,11 @@ $minimumReportDate = $today->modify('-3 days');
         </div>
 
         <div class="col-md-3 mb-2">
-          <input type="file" name="bukti[]" class="form-control" accept="image/*,application/pdf,video/*" required />
+          <div class="custom-file evidence-upload">
+                      <input type="file" name="bukti[]" class="custom-file-input evidence-file-input" accept="image/*,application/pdf,video/*" required>
+                      <label class="custom-file-label evidence-file-label" data-browse="Pilih"><i class="fas fa-paperclip mr-1"></i><span>Unggah bukti</span></label>
+                    </div>
+                    <small class="evidence-upload-hint">Gambar/PDF maks. 5MB, video maks. 50MB</small>
         </div>
 
         <div
@@ -93,6 +99,13 @@ $minimumReportDate = $today->modify('-3 days');
   </form>
 </div>
 
+<?php if (!empty($oldCreateInput)): ?>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    restoreLaporanCreateDraft('form[action="/pegawai/laporan/store"]', <?= json_encode($oldCreateInput, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>);
+  });
+</script>
+<?php endif; ?>
 <?php
 $content = ob_get_clean();
 

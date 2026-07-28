@@ -1,7 +1,8 @@
 <?php ob_start(); ?>
 <?php
-$hasApprovedReport = !empty(array_filter($laporan ?? [], fn ($row) => ($row['status'] ?? 'pending') === 'approved'));
-$today = new DateTimeImmutable('today');
+$hasApprovedReport = !empty(array_filter($laporan ?? [], fn($row) => ($row['status'] ?? 'pending') === 'approved'));
+$appTimezone = new DateTimeZone('Asia/Jakarta');
+$today = new DateTimeImmutable('today', $appTimezone);
 $editableLimitDate = $today->modify('-3 days');
 ?>
 
@@ -106,13 +107,16 @@ $editableLimitDate = $today->modify('-3 days');
             <?php $no = 1;
             foreach ($laporan as $row): ?>
               <?php
-              $rowDate = DateTimeImmutable::createFromFormat('!Y-m-d', (string) ($row['tanggal'] ?? ''));
+              $rowTanggal = substr((string) ($row['tanggal'] ?? ''), 0, 10);
+              $rowDate = DateTimeImmutable::createFromFormat('!Y-m-d', $rowTanggal, $appTimezone);
+              $rowDate = $rowDate && $rowDate->format('Y-m-d') === $rowTanggal ? $rowDate : null;
               $isApproved = (($row['status'] ?? 'pending') === 'approved');
+              $isApprovalRevoked = !empty($row['approval_revoked_at']);
               $isOutsideEditWindow = !$rowDate || $rowDate < $editableLimitDate || $rowDate > $today;
-              $disablePegawaiAction = $isApproved || $isOutsideEditWindow;
+              $disablePegawaiAction = $isApproved || (!$isApprovalRevoked && $isOutsideEditWindow);
               $disablePegawaiTitle = $isApproved
                 ? 'Laporan sudah disahkan'
-                : ($isOutsideEditWindow ? 'Batas edit maksimal 3 hari sebelumnya' : '');
+                : ((!$isApprovalRevoked && $isOutsideEditWindow) ? 'Batas edit maksimal 3 hari sebelumnya' : '');
               ?>
               <tr>
                 <td class="text-center"><?= $no++ ?></td>
@@ -123,7 +127,7 @@ $editableLimitDate = $today->modify('-3 days');
 
                 <td class="text-center">
                   <?php if ($row['bukti']): ?>
-                    <a href="/public/uploads/bukti/<?= $row['bukti'] ?>" target="_blank" class="btn btn-info btn-sm">
+                    <a href="/public/uploads/bukti/<?= rawurlencode($row['bukti']) ?>" target="_blank" class="btn btn-info btn-sm">
                       <i class="fas fa-eye"></i> Lihat
                     </a>
                   <?php else: ?>
@@ -132,7 +136,10 @@ $editableLimitDate = $today->modify('-3 days');
                 </td>
 
                 <td class="text-center">
-                  <?php if (($row['status'] ?? 'pending') === 'approved'): ?>
+                  <?php if (!empty($row['approval_revoked_at'])): ?>
+                    <span class="badge badge-secondary">Pengesahan Dicabut</span><br>
+                    <small>Dapat diperbaiki sampai disahkan kembali</small>
+                  <?php elseif (($row['status'] ?? 'pending') === 'approved'): ?>
                     <span class="badge badge-success">Siap Cetak</span><br>
                     <small>Ditandatangani admin</small>
                   <?php elseif (($row['status'] ?? 'pending') === 'rejected'): ?>

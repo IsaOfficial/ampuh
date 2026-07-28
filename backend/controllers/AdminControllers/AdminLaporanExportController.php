@@ -29,8 +29,8 @@ class AdminLaporanExportController
             'pegawai_id' => isset($_GET['pegawai_id']) && $_GET['pegawai_id'] !== ''
                 ? (int) $_GET['pegawai_id']
                 : null,
-            'start' => $_GET['start'] ?? null,
-            'end'   => $_GET['end'] ?? null,
+            'start' => trim($_GET['start'] ?? '') ?: null,
+            'end'   => trim($_GET['end'] ?? '') ?: null,
             'status' => trim($_GET['status'] ?? '') ?: null,
         ];
     }
@@ -48,53 +48,73 @@ class AdminLaporanExportController
 
     public function exportPdf(): void
     {
-        $admin  = $this->authService->Admin();
-        $filter = $this->buildFilter();
+        try {
+            $admin  = $this->authService->Admin();
+            $filter = $this->buildFilter();
 
-        $result = $this->laporanExportService->exportLaporanByAdmin(
-            $filter['pegawai_id'],
-            $filter['start'],
-            $filter['end'],
-            $admin['nama'] ?? 'Administrator',
-            $filter['status']
-        );
+            $result = $this->laporanExportService->exportLaporanByAdmin(
+                $filter['pegawai_id'],
+                $filter['start'],
+                $filter['end'],
+                $admin['nama'] ?? 'Ka. TU MTs Negeri 1 Jepara',
+                $filter['status']
+            );
 
-        view('admin/export/laporan/pdf', [
-            'title'   => $result['title'],
-            'laporan' => $result['data'],
-            'pegawai' => $this->resolvePegawaiLabel($filter['pegawai_id']),
-            'start'   => $filter['start'],
-            'end'     => $filter['end'],
-            'admin'   => $admin,
-        ]);
+            view('admin/export/laporan/pdf', [
+                'title'   => $result['title'],
+                'laporan' => $result['data'],
+                'pegawai' => $this->resolvePegawaiLabel($filter['pegawai_id']),
+                'start'   => $filter['start'],
+                'end'     => $filter['end'],
+                'admin'   => $admin,
+            ]);
+        } catch (Exception $e) {
+            Session::flash('flash', [
+                'type' => 'warning',
+                'message' => $e->getMessage()
+            ]);
+
+            header('Location: /admin/kelola-laporan');
+            exit;
+        }
     }
 
     public function exportExcel(): void
     {
-        $admin  = $this->authService->Admin();
-        $filter = $this->buildFilter();
+        try {
+            $admin  = $this->authService->Admin();
+            $filter = $this->buildFilter();
 
-        $result = $this->laporanExportService->exportLaporanByAdmin(
-            $filter['pegawai_id'],
-            $filter['start'],
-            $filter['end'],
-            $admin['nama'] ?? 'Administrator',
-            $filter['status']
-        );
+            $result = $this->laporanExportService->exportLaporanByAdmin(
+                $filter['pegawai_id'],
+                $filter['start'],
+                $filter['end'],
+                $admin['nama'] ?? 'Ka. TU MTs Negeri 1 Jepara',
+                $filter['status']
+            );
 
-        header('Content-Type: application/vnd.ms-excel');
-        header("Content-Disposition: attachment; filename=\"{$result['filename']}\"");
-        header('Pragma: no-cache');
-        header('Expires: 0');
+            header('Content-Type: application/vnd.ms-excel');
+            header("Content-Disposition: attachment; filename=\"{$result['filename']}\"");
+            header('Pragma: no-cache');
+            header('Expires: 0');
 
-        view('admin/export/laporan/excel', [
-            'laporan' => $result['data'],
-            'pegawai' => $this->resolvePegawaiLabel($filter['pegawai_id']),
-            'start'   => $filter['start'],
-            'end'     => $filter['end'],
-            'admin'   => $admin,
-        ]);
+            view('admin/export/laporan/excel', [
+                'laporan' => $result['data'],
+                'pegawai' => $this->resolvePegawaiLabel($filter['pegawai_id']),
+                'start'   => $filter['start'],
+                'end'     => $filter['end'],
+                'admin'   => $admin,
+            ]);
 
-        exit;
+            exit;
+        } catch (Exception $e) {
+            Session::flash('flash', [
+                'type' => 'warning',
+                'message' => $e->getMessage()
+            ]);
+
+            header('Location: /admin/kelola-laporan');
+            exit;
+        }
     }
 }

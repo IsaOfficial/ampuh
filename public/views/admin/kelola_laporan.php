@@ -5,6 +5,8 @@ $selectedPegawaiId = (string) ($filter['pegawai_id'] ?? '');
 $selectedStatus = (string) ($filter['status'] ?? '');
 $selectedStart = (string) ($filter['start'] ?? '');
 $selectedEnd = (string) ($filter['end'] ?? '');
+$bulkSelectableLaporanIds = [];
+$oldCreateInput = Session::getFlash('old_admin_laporan_create') ?: [];
 ?>
 
 <!-- Judul Halaman -->
@@ -127,7 +129,7 @@ $selectedEnd = (string) ($filter['end'] ?? '');
                 <select name="pegawai_id" class="form-control" required>
                   <option value="">-- Pilih Pegawai --</option>
                   <?php foreach ($pegawai_list as $p): ?>
-            <option value="<?= $p['id'] ?>" <?= $selectedPegawaiId === (string) $p['id'] ? 'selected' : '' ?>>
+                    <option value="<?= $p['id'] ?>" <?= $selectedPegawaiId === (string) $p['id'] ? 'selected' : '' ?>>
                       <?= htmlspecialchars($p['nama']) ?>
                     </option>
                   <?php endforeach; ?>
@@ -160,7 +162,11 @@ $selectedEnd = (string) ($filter['end'] ?? '');
                   </div>
 
                   <div class="col-md-3 mb-2">
-                    <input type="file" name="bukti[]" class="form-control" accept="image/*,application/pdf,video/*" required />
+                    <div class="custom-file evidence-upload">
+                      <input type="file" name="bukti[]" class="custom-file-input evidence-file-input" accept="image/*,application/pdf,video/*" required>
+                      <label class="custom-file-label evidence-file-label" data-browse="Pilih"><i class="fas fa-paperclip mr-1"></i><span>Unggah bukti</span></label>
+                    </div>
+                    <small class="evidence-upload-hint">Gambar/PDF maks. 5MB, video maks. 50MB</small>
                   </div>
 
                   <div
@@ -192,6 +198,8 @@ $selectedEnd = (string) ($filter['end'] ?? '');
 
   <div class="card-body">
     <div class="table-responsive">
+      <div class="alert alert-info py-2 small">Aksi kolektif berlaku per kegiatan. Setiap baris kegiatan dapat diproses sendiri-sendiri.</div>
+
 
       <table
         class="table table-bordered table-striped"
@@ -204,12 +212,12 @@ $selectedEnd = (string) ($filter['end'] ?? '');
             </th>
             <th>No</th>
             <th>Hari & Tanggal</th>
-            <th>Status</th>
             <th>Foto</th>
             <th>Nama Pegawai</th>
             <th>Kegiatan</th>
             <th>Output</th>
             <th>Bukti</th>
+            <th>Status</th>
             <th width="80">Aksi</th>
           </tr>
         </thead>
@@ -219,25 +227,9 @@ $selectedEnd = (string) ($filter['end'] ?? '');
             <?php $no = 1;
             foreach ($laporan as $row): ?>
               <tr>
-                <td><input type="checkbox" class="rowCheckbox" form="bulkProcessForm" name="laporan_ids[]" value="<?= (int) $row['laporan_id'] ?>"></td>
+                <td class="text-center"><input type="checkbox" class="rowCheckbox" form="bulkProcessForm" name="kegiatan_ids[]" value="<?= (int) $row['kegiatan_id'] ?>"></td>
                 <td><?= $no++ ?></td>
                 <td><?= DateHelper::hariTanggalIndo($row['tanggal']); ?></td>
-                <td class="text-center">
-                  <?php if (($row['status'] ?? 'pending') === 'approved'): ?>
-                    <span class="badge badge-success">Ditandatangani</span><br>
-                    <small><?= htmlspecialchars($row['signed_name'] ?? '-') ?></small>
-                    <?php if (!empty($row['verification_token'])): ?>
-                      <br><small>Kode: <?= htmlspecialchars(substr($row['verification_token'], 0, 12)) ?></small>
-                    <?php endif; ?>
-                  <?php elseif (($row['status'] ?? 'pending') === 'rejected'): ?>
-                    <span class="badge badge-danger">Ditolak</span>
-                    <?php if (!empty($row['rejection_note'])): ?>
-                      <br><small><?= htmlspecialchars($row['rejection_note']) ?></small>
-                    <?php endif; ?>
-                  <?php else: ?>
-                    <span class="badge badge-warning">Menunggu</span>
-                  <?php endif; ?>
-                </td>
 
                 <td class="text-center">
                   <img
@@ -252,11 +244,33 @@ $selectedEnd = (string) ($filter['end'] ?? '');
 
                 <td class="text-center">
                   <?php if ($row['bukti']): ?>
-                    <a href="/public/uploads/bukti/<?= $row['bukti'] ?>" target="_blank" class="btn btn-info btn-sm">
+                    <a href="/public/uploads/bukti/<?= rawurlencode($row['bukti']) ?>" target="_blank" class="btn btn-info btn-sm">
                       <i class="fas fa-eye"></i> Lihat
                     </a>
                   <?php else: ?>
                     <span class="text-muted">Tidak ada</span>
+                  <?php endif; ?>
+                </td>
+
+                <td class="text-center">
+                  <?php if (!empty($row['approval_revoked_at'])): ?>
+                    <span class="badge badge-secondary">Pengesahan Dicabut</span><br>
+                    <?php if (!empty($row['verification_token'])): ?>
+                      <small>Kode lama: <?= htmlspecialchars(substr($row['verification_token'], 0, 12)) ?></small>
+                    <?php endif; ?>
+                  <?php elseif (($row['status'] ?? 'pending') === 'approved'): ?>
+                    <span class="badge badge-success">Ditandatangani</span><br>
+                    <small><?= htmlspecialchars($row['signed_name'] ?? '-') ?></small>
+                    <?php if (!empty($row['verification_token'])): ?>
+                      <br><small>Kode: <?= htmlspecialchars(substr($row['verification_token'], 0, 12)) ?></small>
+                    <?php endif; ?>
+                  <?php elseif (($row['status'] ?? 'pending') === 'rejected'): ?>
+                    <span class="badge badge-danger">Ditolak</span>
+                    <?php if (!empty($row['rejection_note'])): ?>
+                      <br><small><?= htmlspecialchars($row['rejection_note']) ?></small>
+                    <?php endif; ?>
+                  <?php else: ?>
+                    <span class="badge badge-warning">Menunggu</span>
                   <?php endif; ?>
                 </td>
 
@@ -333,8 +347,8 @@ $selectedEnd = (string) ($filter['end'] ?? '');
                             <?php if ($row['bukti']): ?>
                               <div class="form-group">
                                 <label>Bukti Saat Ini:</label><br>
-                                <a href="/uploads/bukti/<?= $row['bukti'] ?>" target="_blank">
-                                  <?= $row['bukti'] ?>
+                                <a href="/public/uploads/bukti/<?= rawurlencode($row['bukti']) ?>" target="_blank">
+                                  <?= htmlspecialchars($row['bukti']) ?>
                                 </a>
                               </div>
                             <?php endif; ?>
@@ -408,6 +422,7 @@ $selectedEnd = (string) ($filter['end'] ?? '');
               <option value="">-- Pilih Aksi --</option>
               <option value="approve">Setujui & Tanda Tangani</option>
               <option value="reject">Tolak</option>
+              <option value="revoke">Cabut Pengesahan</option>
               <option value="delete">Hapus</option>
             </select>
           </div>
@@ -434,7 +449,7 @@ $selectedEnd = (string) ($filter['end'] ?? '');
 </div>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function () {
+  document.addEventListener('DOMContentLoaded', function() {
     var selectAll = document.getElementById('selectAll');
     var checkboxes = document.querySelectorAll('.rowCheckbox');
     var bulkForm = document.getElementById('bulkProcessForm');
@@ -444,13 +459,13 @@ $selectedEnd = (string) ($filter['end'] ?? '');
     var rejectionNote = document.getElementById('rejectionNote');
 
     function selectedCount() {
-      var count = 0;
-      checkboxes.forEach(function (checkbox) {
+      var selected = {};
+      checkboxes.forEach(function(checkbox) {
         if (checkbox.checked) {
-          count++;
+          selected[checkbox.value] = true;
         }
       });
-      return count;
+      return Object.keys(selected).length;
     }
 
     function syncBulkFields() {
@@ -459,14 +474,14 @@ $selectedEnd = (string) ($filter['end'] ?? '');
         return;
       }
 
-      signatureNoteGroup.classList.toggle('d-none', action === 'reject' || action === 'delete');
+      signatureNoteGroup.classList.toggle('d-none', action === 'reject' || action === 'revoke' || action === 'delete');
       rejectionNoteGroup.classList.toggle('d-none', action !== 'reject');
       rejectionNote.required = action === 'reject';
     }
 
     if (selectAll) {
-      selectAll.addEventListener('change', function () {
-        checkboxes.forEach(function (checkbox) {
+      selectAll.addEventListener('change', function() {
+        checkboxes.forEach(function(checkbox) {
           checkbox.checked = selectAll.checked;
         });
       });
@@ -478,18 +493,19 @@ $selectedEnd = (string) ($filter['end'] ?? '');
     }
 
     if (bulkForm) {
-      bulkForm.addEventListener('submit', function (event) {
+      bulkForm.addEventListener('submit', function(event) {
         var count = selectedCount();
         var action = bulkAction ? bulkAction.value : '';
         var labels = {
           approve: 'menyetujui dan menandatangani',
           reject: 'menolak',
+          revoke: 'mencabut pengesahan',
           delete: 'menghapus'
         };
 
         if (!count) {
           event.preventDefault();
-          alert('Pilih minimal satu laporan terlebih dahulu.');
+          alert('Pilih minimal satu kegiatan terlebih dahulu.');
           return;
         }
 
@@ -500,13 +516,24 @@ $selectedEnd = (string) ($filter['end'] ?? '');
           return;
         }
 
-        if (!confirm('Yakin ingin ' + (labels[action] || 'memproses') + ' ' + count + ' laporan yang dipilih?')) {
+        if (!confirm('Yakin ingin ' + (labels[action] || 'memproses') + ' ' + count + ' kegiatan yang dipilih?')) {
           event.preventDefault();
         }
       });
     }
   });
 </script>
+<?php if (!empty($oldCreateInput)): ?>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    restoreLaporanCreateDraft('form[action="/admin/kelola/laporan/create"]', <?= json_encode($oldCreateInput, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>);
+
+    if (window.jQuery) {
+      window.jQuery('#tambahLaporanModal').modal('show');
+    }
+  });
+</script>
+<?php endif; ?>
 <?php
 $content = ob_get_clean();
 

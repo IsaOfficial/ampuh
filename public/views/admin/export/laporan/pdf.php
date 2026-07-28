@@ -3,11 +3,11 @@ if (!function_exists('adminPdfStatusLabel')) {
     function adminPdfStatusLabel(?string $status, $revokedAt = null): string
     {
         if (!empty($revokedAt)) {
-            return 'Dicabut';
+            return 'Pengesahan Dicabut';
         }
 
         return match ($status ?? 'pending') {
-            'approved' => 'Disahkan',
+            'approved' => 'Terverifikasi',
             'rejected' => 'Ditolak',
             default => 'Menunggu',
         };
@@ -33,27 +33,60 @@ if (!function_exists('adminPdfPeriodText')) {
     }
 }
 
-$signedReportsById = [];
-foreach (($laporan ?? []) as $row) {
-    if (
-        ($row['status'] ?? '') === 'approved'
-        && empty($row['approval_revoked_at'])
-        && !empty($row['verification_token'])
-        && !empty($row['laporan_id'])
-    ) {
-        $signedReportsById[(int) $row['laporan_id']] = $row;
+if (!function_exists('pdfEvidenceKind')) {
+    function pdfEvidenceKind(string $filename): string
+    {
+        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'avif', 'heic', 'heif', 'tif', 'tiff', 'jfif', 'ico'];
+        $documentExtensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv', 'rtf', 'odt', 'ods', 'odp'];
+        $videoExtensions = ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv', 'mpeg', 'mpg', '3gp', '3g2', 'wmv', 'ogv', 'flv', 'asf', 'mts', 'm2ts', 'hevc', 'h265'];
+
+        if (in_array($ext, $imageExtensions, true)) {
+            return 'image';
+        }
+
+        if (in_array($ext, $documentExtensions, true)) {
+            return 'document';
+        }
+
+        if (in_array($ext, $videoExtensions, true)) {
+            return 'video';
+        }
+
+        return 'file';
     }
 }
 
-$signedReportValues = array_values($signedReportsById);
-$singleSignedReport = count($signedReportValues) === 1 ? $signedReportValues[0] : [];
-$verificationUrl = '';
-$qrDataUri = '';
-
-if ($singleSignedReport && class_exists('AppConfig') && class_exists('QrCodeHelper')) {
-    $verificationUrl = AppConfig::url('/verifikasi-laporan?token=' . urlencode($singleSignedReport['verification_token']));
-    $qrDataUri = QrCodeHelper::dataUri($verificationUrl, 220);
+if (!function_exists('pdfEvidenceUrl')) {
+    function pdfEvidenceUrl(string $filename): string
+    {
+        return '/public/uploads/bukti/' . rawurlencode($filename);
+    }
 }
+
+if (!function_exists('pdfIconUrl')) {
+    function pdfIconUrl(): string
+    {
+        return '/public/assets/img/pdf_icon.png';
+    }
+}
+
+if (!function_exists('mp4IconUrl')) {
+    function mp4IconUrl(): string
+    {
+        return '/public/assets/img/mp4_icon.png';
+    }
+}
+
+$verificationCheckUrl = class_exists('AppConfig') ? AppConfig::url('/verifikasi-laporan') : '/verifikasi-laporan';
+$signedItems = array_values(array_filter($laporan ?? [], static function ($item) {
+    return ($item['status'] ?? '') === 'approved'
+        && empty($item['approval_revoked_at'])
+        && !empty($item['verification_token']);
+}));
+$firstSignedReport = $signedItems[0] ?? [];
+$defaultApproverName = 'Ka. Tata Usaha MTs Negeri 1 Jepara';
+$approverName = trim((string) ($firstSignedReport['signed_name'] ?? $admin['nama'] ?? '')) ?: $defaultApproverName;
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -103,6 +136,10 @@ if ($singleSignedReport && class_exists('AppConfig') && class_exists('QrCodeHelp
         table td {
             border: 1px solid #000;
             padding: 6px 8px;
+        }
+
+        table td {
+            text-align: left;
             vertical-align: top;
         }
 
@@ -124,8 +161,80 @@ if ($singleSignedReport && class_exists('AppConfig') && class_exists('QrCodeHelp
             font-size: 10px;
         }
 
-        .status-label {
+        .evidence-cell,
+        .status-cell {
+            text-align: center;
+            vertical-align: top;
+        }
+
+        .evidence-link {
+            display: inline-block;
+            color: #000;
+            text-decoration: none;
+        }
+
+        .evidence-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 52px;
+            height: 52px;
+            border: 1px solid #000;
+            margin: 0 auto;
+            font-size: 12px;
             font-weight: bold;
+            box-sizing: border-box;
+        }
+
+        .evidence-icon-document {
+            border-radius: 2px;
+        }
+
+        .evidence-pdf-icon,
+        .evidence-video-icon {
+            display: block;
+            width: 52px;
+            height: 52px;
+            object-fit: contain;
+            margin: 0 auto;
+        }
+
+        .evidence-link-label {
+            display: block;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .evidence-filename {
+            font-size: 9px;
+            line-height: 1.2;
+            word-break: break-all;
+        }
+
+        .status-qr-code {
+            display: block;
+            width: 88px;
+            height: 88px;
+            object-fit: contain;
+            margin: 0 auto;
+        }
+
+        .status-code {
+            font-size: 9px;
+            margin-bottom: 8px;
+            word-break: break-all;
+        }
+
+        .status-label {
+            display: block;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .verification-note {
+            margin-top: 10px;
+            font-size: 10px;
+            text-align: left;
         }
 
         .footer {
@@ -143,22 +252,19 @@ if ($singleSignedReport && class_exists('AppConfig') && class_exists('QrCodeHelp
             font-size: 10px;
         }
 
-        .approval-qr-code {
-            display: block;
-            width: 100px;
-            height: 100px;
-            object-fit: contain;
-            margin: 6px 0 6px auto;
+        .signature-name {
+            font-weight: bold;
         }
 
+
         @media print {
-            .approval-qr-code {
+            .status-qr-code {
                 display: block !important;
                 visibility: visible !important;
-                width: 100px !important;
-                height: 100px !important;
+                width: 78px !important;
+                height: 78px !important;
                 object-fit: contain;
-                margin: 6px 0 6px auto;
+                margin: 0 auto;
                 print-color-adjust: exact;
                 -webkit-print-color-adjust: exact;
             }
@@ -178,8 +284,7 @@ if ($singleSignedReport && class_exists('AppConfig') && class_exists('QrCodeHelp
 <body onload="window.print()">
 
     <div class="header">
-        <h2>LAPORAN KEGIATAN PEGAWAI</h2>
-        <h4>Rekapitulasi Laporan Kegiatan</h4>
+        <h2>REKAPITULASI LAPORAN KEGIATAN PEGAWAI</h2>
     </div>
 
     <div class="info">
@@ -197,13 +302,13 @@ if ($singleSignedReport && class_exists('AppConfig') && class_exists('QrCodeHelp
     <table>
         <thead>
             <tr>
-                <th width="5%">No</th>
-                <th width="12%">Tanggal</th>
-                <th width="16%">Nama Pegawai</th>
-                <th>Kegiatan</th>
-                <th width="16%">Output</th>
-                <th width="14%">Bukti</th>
-                <th width="13%">Status</th>
+                <th width="3%">No</th>
+                <th width="10%">Tanggal</th>
+                <th width="15%">Nama Pegawai</th>
+                <th width="23%">Kegiatan</th>
+                <th width="13%">Output</th>
+                <th width="18%">Bukti</th>
+                <th width="18%">Status</th>
             </tr>
         </thead>
         <tbody>
@@ -215,8 +320,8 @@ if ($singleSignedReport && class_exists('AppConfig') && class_exists('QrCodeHelp
                 <?php $no = 1; ?>
                 <?php foreach ($laporan as $item): ?>
                     <tr>
-                        <td class="text-center"><?= $no++ ?></td>
-                        <td class="text-center"><?= !empty($item['tanggal']) ? date('d/m/Y', strtotime($item['tanggal'])) : '-' ?></td>
+                        <td><?= $no++ ?></td>
+                        <td><?= !empty($item['tanggal']) ? date('d/m/Y', strtotime($item['tanggal'])) : '-' ?></td>
                         <td>
                             <?= htmlspecialchars($item['nama_pegawai'] ?? '-') ?>
                             <?php if (!empty($item['nip'])): ?>
@@ -227,31 +332,63 @@ if ($singleSignedReport && class_exists('AppConfig') && class_exists('QrCodeHelp
                         </td>
                         <td><?= htmlspecialchars($item['kegiatan'] ?? '-') ?></td>
                         <td><?= htmlspecialchars($item['output'] ?? '-') ?></td>
-                        <td class="text-center">
+                        <td class="evidence-cell">
                             <?php if (!empty($item['bukti'])): ?>
                                 <?php
-                                $ext = strtolower(pathinfo($item['bukti'], PATHINFO_EXTENSION));
-                                if (in_array($ext, ['jpg', 'jpeg', 'png'], true)):
+                                $evidenceFile = (string) $item['bukti'];
+                                $evidenceExt = strtolower(pathinfo($evidenceFile, PATHINFO_EXTENSION));
+                                $evidenceKind = pdfEvidenceKind($evidenceFile);
+                                $evidenceUrl = pdfEvidenceUrl($evidenceFile);
+                                $evidenceExtLabel = strtoupper(substr($evidenceExt ?: 'FILE', 0, 4));
                                 ?>
-                                    <img src="/public/uploads/bukti/<?= htmlspecialchars($item['bukti']) ?>"
-                                        alt="Bukti" style="max-width: 140px; max-height: 120px; display:block; margin: 0 auto 5px;">
+                                <?php if ($evidenceKind === 'image'): ?>
+                                    <a href="<?= htmlspecialchars($evidenceUrl) ?>" target="_blank" rel="noopener">
+                                        <img src="<?= htmlspecialchars($evidenceUrl) ?>"
+                                            alt="Bukti" style="max-width: 100px; max-height: 80px; display:block; margin: 0 auto 5px;">
+                                    </a>
+                                <?php elseif ($evidenceKind === 'document'): ?>
+                                    <a href="<?= htmlspecialchars($evidenceUrl) ?>" target="_blank" rel="noopener" class="evidence-link" title="Buka atau unduh dokumen bukti">
+                                        <?php if ($evidenceExt === 'pdf'): ?>
+                                            <img src="<?= htmlspecialchars(pdfIconUrl()) ?>" alt="PDF" class="evidence-pdf-icon">
+                                        <?php else: ?>
+                                            <span class="evidence-icon evidence-icon-document"><?= htmlspecialchars($evidenceExtLabel) ?></span>
+                                        <?php endif; ?>
+                                        <span class="evidence-link-label">Dokumen</span>
+                                    </a>
+                                <?php elseif ($evidenceKind === 'video'): ?>
+                                    <a href="<?= htmlspecialchars($evidenceUrl) ?>" target="_blank" rel="noopener" class="evidence-link" title="Buka preview video bukti">
+                                        <img src="<?= htmlspecialchars(mp4IconUrl()) ?>" alt="Video" class="evidence-video-icon">
+                                        <span class="evidence-link-label">Video</span>
+                                    </a>
+                                <?php else: ?>
+                                    <a href="<?= htmlspecialchars($evidenceUrl) ?>" target="_blank" rel="noopener" class="evidence-link" title="Buka atau unduh file bukti">
+                                        <span class="evidence-icon evidence-icon-document"><?= htmlspecialchars($evidenceExtLabel) ?></span>
+                                        <span class="evidence-link-label">File</span>
+                                    </a>
                                 <?php endif; ?>
-                                <?= htmlspecialchars($item['bukti']) ?>
+                                <div class="evidence-filename"><?= htmlspecialchars($evidenceFile) ?></div>
                             <?php else: ?>
                                 -
                             <?php endif; ?>
                         </td>
-                        <td class="text-center">
-                            <span class="status-label"><?= htmlspecialchars(adminPdfStatusLabel($item['status'] ?? 'pending', $item['approval_revoked_at'] ?? null)) ?></span>
-                            <?php if (($item['status'] ?? 'pending') === 'rejected' && !empty($item['rejection_note'])): ?>
-                                <div class="text-small"><?= htmlspecialchars($item['rejection_note']) ?></div>
+                        <?php
+                        $rowStatus = $item['status'] ?? 'pending';
+                        $isVerified = $rowStatus === 'approved' && empty($item['approval_revoked_at']) && !empty($item['verification_token']);
+                        $rowQrDataUri = '';
+
+                        if ($isVerified && class_exists('QrCodeHelper')) {
+                            $rowVerificationUrl = (class_exists('AppConfig') ? AppConfig::url('/verifikasi-laporan?token=' . urlencode($item['verification_token'])) : '/verifikasi-laporan?token=' . urlencode($item['verification_token']));
+                            $rowQrDataUri = QrCodeHelper::dataUri($rowVerificationUrl, 160);
+                        }
+                        ?>
+                        <td class="status-cell">
+                            <?php if ($isVerified): ?>
+                                <?php if (!empty($rowQrDataUri)): ?>
+                                    <img src="<?= htmlspecialchars($rowQrDataUri) ?>" alt="QR Code Verifikasi" class="status-qr-code">
+                                <?php endif; ?>
+                                <div class="status-code">Kode: <?= htmlspecialchars(substr($item['verification_token'], 0, 12)) ?></div>
                             <?php endif; ?>
-                            <?php if (!empty($item['verification_token']) && empty($item['approval_revoked_at'])): ?>
-                                <div class="text-small">Kode: <?= htmlspecialchars(substr($item['verification_token'], 0, 12)) ?></div>
-                            <?php endif; ?>
-                            <?php if (!empty($item['approved_at']) && empty($item['approval_revoked_at'])): ?>
-                                <div class="text-small"><?= date('d/m/Y H:i', strtotime($item['approved_at'])) ?></div>
-                            <?php endif; ?>
+                            <span class="status-label"><?= htmlspecialchars(adminPdfStatusLabel($rowStatus, $item['approval_revoked_at'] ?? null)) ?></span>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -259,26 +396,19 @@ if ($singleSignedReport && class_exists('AppConfig') && class_exists('QrCodeHelp
         </tbody>
     </table>
 
+    <div class="verification-note">
+        <i><span style="color: red;">* </span>Cek QR Code atau kode verifikasi pada kolom Status melalui <a href="<?= htmlspecialchars($verificationCheckUrl) ?>" target="_blank"><?= htmlspecialchars($verificationCheckUrl) ?></a>.
+            Setiap QR Code dan kode berlaku untuk satu kegiatan pada baris yang sama.</i>
+    </div>
+
     <div class="footer">
-        Jepara, <?= date('d M Y') ?>
-        <div class="signature approval-block">
-            <?php if (!empty($qrDataUri)): ?>
-                <img src="<?= htmlspecialchars($qrDataUri) ?>" alt="QR Code Verifikasi Dokumen" class="approval-qr-code">
-                <div class="approval-note">Laporan ini telah disahkan secara elektronik.</div>
-                <div class="approval-note">Kode: <?= htmlspecialchars(substr($singleSignedReport['verification_token'], 0, 12)) ?></div>
-                <div class="approval-note">Disahkan pada:
-                    <span><?= !empty($singleSignedReport['approved_at']) ? date('d/m/Y H:i', strtotime($singleSignedReport['approved_at'])) : '-' ?></span>
-                </div>
-                <?php if (!empty($singleSignedReport['signature_note'])): ?>
-                    <div class="approval-note"><?= htmlspecialchars($singleSignedReport['signature_note']) ?></div>
-                <?php endif; ?>
-            <?php else: ?>
-                <div class="approval-note">Dicetak oleh admin: <?= htmlspecialchars($admin['nama'] ?? '-') ?></div>
-                <div class="approval-note">Status dan kode verifikasi tercantum pada tabel laporan.</div>
-            <?php endif; ?>
-            style="margin-top: 50px; text-align: right;">
+        <div class="signature approval-block" style="margin-top: 10px; text-align: right;">
+            Jepara, <?= date('d M Y') ?><br><br>
+            <div>Yang mengesahkan,</div>
+
+            <br><br><br>
             ____________________________<br>
-            <span class="signature-name"><?= htmlspecialchars($admin['nama']) ?></span><br>
+            <span class="signature-name"><?= htmlspecialchars($approverName) ?></span><br>
         </div>
     </div>
 

@@ -10,11 +10,11 @@ class Database
     public static function getConnection(): PDO
     {
         if (self::$conn === null) {
-            $host    = 'localhost';
-            $db      = 'ampuh';
-            $user    = 'root';
-            $pass    = '';
-            $charset = 'utf8mb4';
+            $host    = getenv('DB_HOST') ?: 'localhost';
+            $db      = getenv('DB_DATABASE') ?: 'ampuh';
+            $user    = getenv('DB_USERNAME') ?: 'root';
+            $pass    = getenv('DB_PASSWORD') ?: '';
+            $charset = getenv('DB_CHARSET') ?: 'utf8mb4';
 
             $dsn = "mysql:host={$host};dbname={$db};charset={$charset}";
 
@@ -27,7 +27,7 @@ class Database
             try {
                 self::$conn = new PDO($dsn, $user, $pass, $options);
             } catch (PDOException $e) {
-                // Jangan tampilkan detail error ke user
+                error_log('Database connection failed: ' . $e->getMessage());
                 die('Koneksi database gagal.');
             }
         }

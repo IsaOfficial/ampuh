@@ -69,54 +69,54 @@ class LaporanHarianModel
         $stmt->execute([':id' => $id]);
     }
 
-    public function approveBulk(array $laporanIds, int $adminId, string $adminName, ?string $signatureNote = null): int
+    public function approveBulk(array $kegiatanIds, int $adminId, string $adminName, ?string $signatureNote = null): int
     {
-        $laporanIds = array_values(array_unique(array_filter(array_map('intval', $laporanIds))));
+        $kegiatanIds = array_values(array_unique(array_filter(array_map('intval', $kegiatanIds))));
 
-        if (!$laporanIds) {
+        if (!$kegiatanIds) {
             return 0;
         }
 
         $updated = 0;
 
-        foreach ($laporanIds as $laporanId) {
-            $updated += $this->approveOnce($laporanId, $adminId, $signatureNote);
+        foreach ($kegiatanIds as $kegiatanId) {
+            $updated += $this->approveOnce($kegiatanId, $adminId, $signatureNote);
         }
 
         return $updated;
     }
 
-    private function approveOnce(int $laporanId, int $adminId, ?string $signatureNote = null): int
+    private function approveOnce(int $kegiatanId, int $adminId, ?string $signatureNote = null): int
     {
         $this->db->beginTransaction();
 
         try {
             $stmt = $this->db->prepare("
                 SELECT *
-                FROM {$this->table}
+                FROM laporan_kegiatan
                 WHERE id = :id
                 FOR UPDATE
             ");
-            $stmt->execute([':id' => $laporanId]);
+            $stmt->execute([':id' => $kegiatanId]);
 
-            $laporan = $stmt->fetch(PDO::FETCH_ASSOC);
+            $kegiatan = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if (!$laporan) {
+            if (!$kegiatan) {
                 $this->db->rollBack();
                 return 0;
             }
 
-            if (($laporan['approval_status'] ?? 'pending') === 'approved' && !empty($laporan['verification_token'])) {
+            if (($kegiatan['approval_status'] ?? 'pending') === 'approved' && !empty($kegiatan['verification_token'])) {
                 $this->db->commit();
                 return 0;
             }
 
             $approvedAt = date('Y-m-d H:i:s');
             $token = $this->generateUniqueVerificationToken();
-            $documentHash = $this->buildDocumentHash($laporanId, $approvedAt, $adminId);
+            $documentHash = $this->buildDocumentHash($kegiatanId, $approvedAt, $adminId);
 
             $update = $this->db->prepare("
-                UPDATE {$this->table}
+                UPDATE laporan_kegiatan
                 SET
                     approval_status = 'approved',
                     approved_by = :approved_by,
@@ -135,7 +135,7 @@ class LaporanHarianModel
                 ':verification_token' => $token,
                 ':document_hash'      => $documentHash,
                 ':signature_note'     => $signatureNote,
-                ':id'                 => $laporanId,
+                ':id'                 => $kegiatanId,
             ]);
 
             $this->db->commit();
@@ -149,18 +149,18 @@ class LaporanHarianModel
         }
     }
 
-    public function rejectBulk(array $laporanIds, ?string $rejectionNote = null): int
+    public function rejectBulk(array $kegiatanIds, ?string $rejectionNote = null): int
     {
-        $laporanIds = array_values(array_unique(array_filter(array_map('intval', $laporanIds))));
+        $kegiatanIds = array_values(array_unique(array_filter(array_map('intval', $kegiatanIds))));
 
-        if (!$laporanIds) {
+        if (!$kegiatanIds) {
             return 0;
         }
 
-        $placeholders = implode(',', array_fill(0, count($laporanIds), '?'));
+        $placeholders = implode(',', array_fill(0, count($kegiatanIds), '?'));
 
         $stmt = $this->db->prepare("
-            UPDATE {$this->table}
+            UPDATE laporan_kegiatan
             SET
                 approval_status = 'rejected',
                 approved_by = NULL,
@@ -173,28 +173,53 @@ class LaporanHarianModel
             WHERE id IN ({$placeholders})
         ");
 
-        $stmt->execute(array_merge([$rejectionNote], $laporanIds));
+        $stmt->execute(array_merge([$rejectionNote], $kegiatanIds));
 
         return $stmt->rowCount();
     }
 
-    public function revokeApproval(int $laporanId): void
+    public function revokeApproval(int $kegiatanId): void
     {
         $stmt = $this->db->prepare("
-            UPDATE {$this->table}
+            UPDATE laporan_kegiatan
             SET
                 approval_status = 'pending',
-                approval_revoked_at = NOW()
+                approval_revoked_at = NOW(),
+                rejection_note = NULL
             WHERE id = :id AND approval_status = 'approved'
         ");
 
-        $stmt->execute([':id' => $laporanId]);
+        $stmt->execute([':id' => $kegiatanId]);
     }
 
+    public function revokeBulk(array $kegiatanIds): int
+    {
+        $kegiatanIds = array_values(array_unique(array_filter(array_map('intval', $kegiatanIds))));
+
+        if (!$kegiatanIds) {
+            return 0;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($kegiatanIds), '?'));
+
+        $stmt = $this->db->prepare("
+            UPDATE laporan_kegiatan
+            SET
+                approval_status = 'pending',
+                approval_revoked_at = NOW(),
+                rejection_note = NULL
+            WHERE id IN ({$placeholders})
+              AND approval_status = 'approved'
+        ");
+
+        $stmt->execute($kegiatanIds);
+
+        return $stmt->rowCount();
+    }
     public function markPending(int $laporanId): void
     {
         $stmt = $this->db->prepare("
-            UPDATE {$this->table}
+            UPDATE laporan_kegiatan
             SET
                 approval_status = 'pending',
                 approved_by = NULL,
@@ -204,17 +229,40 @@ class LaporanHarianModel
                 approval_revoked_at = NULL,
                 signature_note = NULL,
                 rejection_note = NULL
-            WHERE id = :id AND approval_status <> 'approved'
+            WHERE laporan_id = :id AND approval_status <> 'approved'
         ");
 
         $stmt->execute([':id' => $laporanId]);
     }
 
+
+    public function markKegiatanPending(int $kegiatanId, bool $preserveRevokedAt = false): void
+    {
+        $revokedAtSql = $preserveRevokedAt
+            ? 'approval_revoked_at = approval_revoked_at,'
+            : 'approval_revoked_at = NULL,';
+
+        $stmt = $this->db->prepare("
+            UPDATE laporan_kegiatan
+            SET
+                approval_status = 'pending',
+                approved_by = NULL,
+                approved_at = NULL,
+                verification_token = NULL,
+                document_hash = NULL,
+                {$revokedAtSql}
+                signature_note = NULL,
+                rejection_note = NULL
+            WHERE id = :id AND approval_status <> 'approved'
+        ");
+
+        $stmt->execute([':id' => $kegiatanId]);
+    }
     public function countByApprovalStatus(): array
     {
         $stmt = $this->db->prepare("
             SELECT COALESCE(approval_status, 'pending') AS status, COUNT(*) AS total
-            FROM {$this->table}
+            FROM laporan_kegiatan
             GROUP BY COALESCE(approval_status, 'pending')
         ");
         $stmt->execute();
@@ -234,22 +282,23 @@ class LaporanHarianModel
 
         return $counts;
     }
-    public function deleteBulk(array $laporanIds): int
-    {
-        $laporanIds = array_values(array_unique(array_filter(array_map('intval', $laporanIds))));
 
-        if (!$laporanIds) {
+    public function deleteBulk(array $kegiatanIds): int
+    {
+        $kegiatanIds = array_values(array_unique(array_filter(array_map('intval', $kegiatanIds))));
+
+        if (!$kegiatanIds) {
             return 0;
         }
 
-        $placeholders = implode(',', array_fill(0, count($laporanIds), '?'));
+        $placeholders = implode(',', array_fill(0, count($kegiatanIds), '?'));
 
         $stmt = $this->db->prepare("
-            DELETE FROM {$this->table}
+            DELETE FROM laporan_kegiatan
             WHERE id IN ({$placeholders})
         ");
 
-        $stmt->execute(array_merge([$rejectionNote], $laporanIds));
+        $stmt->execute($kegiatanIds);
 
         return $stmt->rowCount();
     }
@@ -261,7 +310,7 @@ class LaporanHarianModel
 
             $stmt = $this->db->prepare("
                 SELECT 1
-                FROM {$this->table}
+                FROM laporan_kegiatan
                 WHERE verification_token = :token
                 LIMIT 1
             ");
@@ -271,9 +320,9 @@ class LaporanHarianModel
         return $token;
     }
 
-    public function buildDocumentHash(int $laporanId, string $approvedAt, int $adminId): string
+    public function buildDocumentHash(int $kegiatanId, string $approvedAt, int $adminId): string
     {
-        $data = $this->buildDocumentData($laporanId, $approvedAt, $adminId);
+        $data = $this->buildDocumentData($kegiatanId, $approvedAt, $adminId);
 
         return hash('sha256', json_encode(
             $data,
@@ -281,54 +330,45 @@ class LaporanHarianModel
         ));
     }
 
-    public function buildDocumentData(int $laporanId, string $approvedAt, int $adminId): array
+    public function buildDocumentData(int $kegiatanId, string $approvedAt, int $adminId): array
     {
         $stmt = $this->db->prepare("
             SELECT
+                lk.id AS kegiatan_id,
+                lk.kegiatan,
+                lk.output,
+                lk.bukti,
                 lh.id AS laporan_id,
                 lh.tanggal,
                 lh.user_id AS pegawai_id,
                 u.nip,
                 u.nik,
                 u.nama AS nama_pegawai
-            FROM {$this->table} lh
+            FROM laporan_kegiatan lk
+            JOIN {$this->table} lh ON lh.id = lk.laporan_id
             JOIN user u ON u.id = lh.user_id
-            WHERE lh.id = :id
+            WHERE lk.id = :id
             LIMIT 1
         ");
-        $stmt->execute([':id' => $laporanId]);
+        $stmt->execute([':id' => $kegiatanId]);
 
-        $laporan = $stmt->fetch(PDO::FETCH_ASSOC);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if (!$laporan) {
-            throw new Exception('Laporan tidak ditemukan.');
-        }
-
-        $kegiatanStmt = $this->db->prepare("
-            SELECT id, kegiatan, output
-            FROM laporan_kegiatan
-            WHERE laporan_id = :laporan_id
-            ORDER BY id ASC
-        ");
-        $kegiatanStmt->execute([':laporan_id' => $laporanId]);
-
-        $kegiatan = [];
-        foreach ($kegiatanStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-            $kegiatan[] = [
-                'id'       => (int) $row['id'],
-                'tanggal'  => $laporan['tanggal'],
-                'kegiatan' => (string) $row['kegiatan'],
-                'output'   => (string) $row['output'],
-            ];
+        if (!$row) {
+            throw new Exception('Kegiatan laporan tidak ditemukan.');
         }
 
         return [
-            'laporan_id'       => (int) $laporan['laporan_id'],
-            'pegawai_id'       => (int) $laporan['pegawai_id'],
-            'nip'              => (string) ($laporan['nip'] ?? ''),
-            'nik'              => (string) ($laporan['nik'] ?? ''),
-            'tanggal'          => (string) $laporan['tanggal'],
-            'kegiatan'         => $kegiatan,
+            'kegiatan_id'      => (int) $row['kegiatan_id'],
+            'laporan_id'       => (int) $row['laporan_id'],
+            'pegawai_id'       => (int) $row['pegawai_id'],
+            'nip'              => (string) ($row['nip'] ?? ''),
+            'nik'              => (string) ($row['nik'] ?? ''),
+            'nama_pegawai'     => (string) ($row['nama_pegawai'] ?? ''),
+            'tanggal'          => (string) $row['tanggal'],
+            'kegiatan'         => (string) $row['kegiatan'],
+            'output'           => (string) $row['output'],
+            'bukti'            => (string) ($row['bukti'] ?? ''),
             'approved_at'      => $approvedAt,
             'approved_by'      => $adminId,
         ];
@@ -338,22 +378,27 @@ class LaporanHarianModel
     {
         $stmt = $this->db->prepare("
             SELECT
+                lk.id AS kegiatan_id,
+                lk.kegiatan,
+                lk.output,
+                lk.bukti,
+                lk.approval_status,
+                lk.approved_by,
+                lk.approved_at,
+                lk.verification_token,
+                lk.document_hash,
+                lk.approval_revoked_at,
                 lh.id AS laporan_id,
                 lh.tanggal,
-                lh.approval_status,
-                lh.approved_by,
-                lh.approved_at,
-                lh.verification_token,
-                lh.document_hash,
-                lh.approval_revoked_at,
                 u.nama AS nama_pegawai,
                 u.nip,
                 u.nik,
                 admin.nama AS nama_admin
-            FROM {$this->table} lh
+            FROM laporan_kegiatan lk
+            JOIN {$this->table} lh ON lh.id = lk.laporan_id
             JOIN user u ON u.id = lh.user_id
-            LEFT JOIN user admin ON admin.id = lh.approved_by
-            WHERE lh.verification_token = :token
+            LEFT JOIN user admin ON admin.id = lk.approved_by
+            WHERE lk.verification_token = :token
             LIMIT 1
         ");
         $stmt->execute([':token' => $token]);
@@ -362,6 +407,38 @@ class LaporanHarianModel
         return $data ?: null;
     }
 
+    public function findVerificationResultByCode(string $code): ?array
+    {
+        $stmt = $this->db->prepare("
+            SELECT
+                lk.id AS kegiatan_id,
+                lk.kegiatan,
+                lk.output,
+                lk.bukti,
+                lk.approval_status,
+                lk.approved_by,
+                lk.approved_at,
+                lk.verification_token,
+                lk.document_hash,
+                lk.approval_revoked_at,
+                lh.id AS laporan_id,
+                lh.tanggal,
+                u.nama AS nama_pegawai,
+                u.nip,
+                u.nik,
+                admin.nama AS nama_admin
+            FROM laporan_kegiatan lk
+            JOIN {$this->table} lh ON lh.id = lk.laporan_id
+            JOIN user u ON u.id = lh.user_id
+            LEFT JOIN user admin ON admin.id = lk.approved_by
+            WHERE lk.verification_token LIKE CONCAT(:code, '%')
+            LIMIT 2
+        ");
+        $stmt->execute([':code' => strtolower($code)]);
+
+        $matches = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return count($matches) === 1 ? $matches[0] : null;
+    }
     public function recalculateKegiatanCount(int $laporanId): int
     {
         $stmt = $this->db->prepare("

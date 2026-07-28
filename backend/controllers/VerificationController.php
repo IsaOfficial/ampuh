@@ -13,20 +13,42 @@ class VerificationController
     {
         header('Content-Type: text/html; charset=UTF-8');
 
-        $token = trim($request['token'] ?? '');
+        $token = strtolower(preg_replace('/\s+/', '', trim($request['token'] ?? '')));
+        $code = strtolower(preg_replace('/\s+/', '', trim($request['kode'] ?? '')));
+        $verificationInput = $token !== '' ? $token : $code;
         $result = [
             'status' => 'invalid',
             'title' => 'Dokumen Tidak Valid',
-            'message' => 'Token tidak terdaftar atau dokumen tidak ditemukan.',
+            'message' => 'Kode verifikasi tidak terdaftar atau dokumen tidak ditemukan.',
             'data' => null,
+            'query' => $verificationInput,
         ];
 
-        if ($token === '' || !preg_match('/\A[a-f0-9]{64}\z/i', $token)) {
-            view('verification/laporan', $result);
+        if ($verificationInput === '') {
+            view('verification/laporan', [
+                'status' => 'neutral',
+                'title' => 'Verifikasi Dokumen',
+                'message' => 'Masukkan kode verifikasi yang tercetak pada dokumen atau pindai QR Code laporan.',
+                'data' => null,
+                'query' => '',
+            ]);
             return;
         }
 
-        $laporan = $this->laporanHarian->findVerificationResultByToken($token);
+        if (!preg_match('/\A[a-f0-9]{12,64}\z/i', $verificationInput)) {
+            view('verification/laporan', [
+                'status' => 'invalid',
+                'title' => 'Format Kode Tidak Valid',
+                'message' => 'Kode verifikasi harus berupa 12 sampai 64 karakter heksadesimal.',
+                'data' => null,
+                'query' => $verificationInput,
+            ]);
+            return;
+        }
+
+        $laporan = strlen($verificationInput) === 64
+            ? $this->laporanHarian->findVerificationResultByToken($verificationInput)
+            : $this->laporanHarian->findVerificationResultByCode($verificationInput);
 
         if (!$laporan) {
             view('verification/laporan', $result);
@@ -39,12 +61,13 @@ class VerificationController
                 'title' => 'Pengesahan Tidak Berlaku',
                 'message' => 'Dokumen ini belum disahkan atau pengesahannya telah dicabut.',
                 'data' => $laporan,
+                'query' => $verificationInput,
             ]);
             return;
         }
 
         $currentHash = $this->laporanHarian->buildDocumentHash(
-            (int) $laporan['laporan_id'],
+            (int) $laporan['kegiatan_id'],
             (string) $laporan['approved_at'],
             (int) $laporan['approved_by']
         );
@@ -55,6 +78,7 @@ class VerificationController
                 'title' => 'Integritas Dokumen Tidak Valid',
                 'message' => 'Data laporan telah berubah setelah proses pengesahan.',
                 'data' => $laporan,
+                'query' => $verificationInput,
             ]);
             return;
         }
@@ -64,6 +88,7 @@ class VerificationController
             'title' => 'Dokumen Valid',
             'message' => 'Dokumen tercatat dan terverifikasi pada sistem.',
             'data' => $laporan,
+            'query' => $verificationInput,
         ]);
     }
 }

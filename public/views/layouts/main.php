@@ -151,6 +151,159 @@
     }
 
     setTanggal("tanggalDisplay", "tanggalAsli");
+    const EVIDENCE_DEFAULT_MAX_SIZE = 5 * 1024 * 1024;
+    const EVIDENCE_VIDEO_MAX_SIZE = 50 * 1024 * 1024;
+    const EVIDENCE_DEFAULT_HINT = "Gambar/PDF maks. 5MB, video maks. 50MB";
+
+    function evidenceFileKind(file) {
+      const mime = (file.type || "").toLowerCase();
+      const name = (file.name || "").toLowerCase();
+      const ext = name.includes(".") ? name.split(".").pop() : "";
+      const imageExt = ["jpg", "jpeg", "png", "gif", "webp", "bmp", "svg", "heic", "heif", "tif", "tiff"];
+      const videoExt = ["mp4", "mov", "m4v", "avi", "mkv", "webm", "3gp", "wmv", "mpeg", "mpg"];
+
+      if (mime.startsWith("image/") || imageExt.includes(ext)) {
+        return "image";
+      }
+
+      if (mime.startsWith("video/") || videoExt.includes(ext)) {
+        return "video";
+      }
+
+      if (mime === "application/pdf" || ext === "pdf") {
+        return "pdf";
+      }
+
+      return mime ? "invalid" : "unknown";
+    }
+
+    function evidenceFileError(file) {
+      const kind = evidenceFileKind(file);
+
+      if (kind === "invalid") {
+        return "Tipe file tidak valid. Gunakan gambar, PDF, atau video.";
+      }
+
+      if (kind === "video" && file.size > EVIDENCE_VIDEO_MAX_SIZE) {
+        return "Ukuran video maksimal 50MB.";
+      }
+
+      if ((kind === "image" || kind === "pdf") && file.size > EVIDENCE_DEFAULT_MAX_SIZE) {
+        return "Ukuran gambar/PDF maksimal 5MB.";
+      }
+
+      return "";
+    }
+
+    function setEvidenceUploadHint(input, message) {
+      const wrapper = input.closest(".col-md-3") || input.closest(".form-group") || input.parentElement;
+      const hint = wrapper ? wrapper.querySelector(".evidence-upload-hint") : null;
+
+      if (!hint) {
+        return;
+      }
+
+      hint.textContent = message || EVIDENCE_DEFAULT_HINT;
+      hint.classList.toggle("text-danger", Boolean(message));
+      hint.classList.toggle("font-weight-bold", Boolean(message));
+    }
+
+    function validateEvidenceInput(input) {
+      const file = input.files && input.files.length ? input.files[0] : null;
+      const message = file ? evidenceFileError(file) : "";
+
+      input.setCustomValidity(message);
+      setEvidenceUploadHint(input, message);
+
+      if (message) {
+        input.reportValidity();
+        input.value = "";
+        syncEvidenceFileLabel(input);
+        return false;
+      }
+
+      return true;
+    }
+
+    function restoreLaporanCreateDraft(formSelector, draft) {
+      if (!draft || typeof draft !== "object") {
+        return;
+      }
+
+      const form = document.querySelector(formSelector);
+      if (!form) {
+        return;
+      }
+
+      const tanggal = form.querySelector('[name="tanggal"]');
+      if (tanggal && draft.tanggal) {
+        tanggal.value = draft.tanggal;
+        tanggal.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+
+      const pegawai = form.querySelector('[name="pegawai_id"]');
+      if (pegawai && draft.pegawai_id) {
+        pegawai.value = draft.pegawai_id;
+      }
+
+      const kegiatan = Array.isArray(draft.kegiatan) ? draft.kegiatan : [];
+      const output = Array.isArray(draft.output) ? draft.output : [];
+      const rowCount = Math.max(1, kegiatan.length, output.length);
+
+      while (form.querySelectorAll(".kegiatan-row").length < rowCount && typeof addRow === "function") {
+        addRow();
+      }
+
+      form.querySelectorAll(".kegiatan-row").forEach(function(row, index) {
+        const kegiatanInput = row.querySelector('[name="kegiatan[]"]');
+        const outputInput = row.querySelector('[name="output[]"]');
+        const fileInput = row.querySelector(".evidence-file-input");
+
+        if (kegiatanInput) {
+          kegiatanInput.value = kegiatan[index] || "";
+        }
+
+        if (outputInput) {
+          outputInput.value = output[index] || "";
+        }
+
+        if (fileInput) {
+          setEvidenceUploadHint(fileInput, "Bukti perlu dipilih ulang.");
+        }
+      });
+    }
+    function syncEvidenceFileLabel(input) {
+      const wrapper = input.closest(".evidence-upload");
+      const label = wrapper ? wrapper.querySelector(".evidence-file-label") : null;
+      const labelText = label ? label.querySelector("span") : null;
+      const fileName = input.files && input.files.length ? input.files[0].name : "Unggah bukti";
+
+      if (labelText) {
+        labelText.textContent = fileName;
+      }
+
+      if (label) {
+        label.classList.toggle("has-file", Boolean(input.files && input.files.length));
+      }
+    }
+
+    document.addEventListener("change", function(event) {
+      if (event.target.classList && event.target.classList.contains("evidence-file-input")) {
+        syncEvidenceFileLabel(event.target);
+        validateEvidenceInput(event.target);
+      }
+    });
+
+    document.addEventListener("submit", function(event) {
+      const inputs = event.target.querySelectorAll(".evidence-file-input");
+      for (const input of inputs) {
+        if (!validateEvidenceInput(input)) {
+          event.preventDefault();
+          input.focus();
+          break;
+        }
+      }
+    }, true);
   </script>
 
   <!-- Tambah Row Kegiatan -->
@@ -177,7 +330,11 @@
             </div>
             
             <div class="col-md-3 mb-2">
-                <input type="file" name="bukti[]" class="form-control" accept="image/*,application/pdf,video/*" required />
+                <div class="custom-file evidence-upload">
+                    <input type="file" name="bukti[]" class="custom-file-input evidence-file-input" accept="image/*,application/pdf,video/*" required>
+                    <label class="custom-file-label evidence-file-label" data-browse="Pilih"><i class="fas fa-paperclip mr-1"></i><span>Unggah bukti</span></label>
+                </div>
+                <small class="evidence-upload-hint">Gambar/PDF maks. 5MB, video maks. 50MB</small>
             </div>
 
             <div class="col-md-1 mb-2 mt-1 d-flex align-items-start justify-content-end">
@@ -216,15 +373,21 @@
 
   <!-- Validasi tanggal akhir untuk cetak laporan agar tidak lebih awal dari tanggal mulai  -->
   <script>
-    document.getElementById('cetakForm').addEventListener('submit', function(e) {
-      const start = document.getElementById('start_date').value;
-      const end = document.getElementById('end_date').value;
+    const cetakForm = document.getElementById('cetakForm');
 
-      if (start && end && end < start) {
-        e.preventDefault();
-        alert('Tanggal akhir tidak boleh lebih kecil dari tanggal awal!');
-      }
-    });
+    if (cetakForm) {
+      cetakForm.addEventListener('submit', function(e) {
+        const startInput = document.getElementById('start_date');
+        const endInput = document.getElementById('end_date');
+        const start = startInput ? startInput.value : '';
+        const end = endInput ? endInput.value : '';
+
+        if (start && end && end < start) {
+          e.preventDefault();
+          alert('Tanggal akhir tidak boleh lebih kecil dari tanggal awal!');
+        }
+      });
+    }
   </script>
 
   <!-- Toggle Password -->
@@ -293,11 +456,12 @@
   <script src="/public/assets/vendor/chart.js/Chart.min.js"></script>
 
   <script>
-    const areaLabels = <?= json_encode($areaChart['labels']) ?>;
-    const areaData = <?= json_encode($areaChart['data']) ?>;
+    const areaChartElement = document.getElementById("myAreaChart");
+    const areaLabels = <?= json_encode($areaChart['labels'] ?? []) ?>;
+    const areaData = <?= json_encode($areaChart['data'] ?? []) ?>;
 
-    if (areaLabels.length > 0) {
-      new Chart(document.getElementById("myAreaChart"), {
+    if (areaChartElement && areaLabels.length > 0) {
+      new Chart(areaChartElement, {
         type: "line",
         data: {
           labels: areaLabels,
@@ -323,27 +487,31 @@
   </script>
 
   <script>
-    new Chart(document.getElementById("myPieChart"), {
-      type: "doughnut",
-      data: {
-        labels: ["Laki-laki", "Perempuan"],
-        datasets: [{
-          data: [
-            <?= (int) $pieChart['laki'] ?>,
-            <?= (int) $pieChart['perempuan'] ?>
-          ],
-          backgroundColor: ["#2e8b57", "#e74a3b"]
-        }]
-      },
-      options: {
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: "bottom"
+    const pieChartElement = document.getElementById("myPieChart");
+
+    if (pieChartElement) {
+      new Chart(pieChartElement, {
+        type: "doughnut",
+        data: {
+          labels: ["Laki-laki", "Perempuan"],
+          datasets: [{
+            data: [
+              <?= (int) ($pieChart['laki'] ?? 0) ?>,
+              <?= (int) ($pieChart['perempuan'] ?? 0) ?>
+            ],
+            backgroundColor: ["#2e8b57", "#e74a3b"]
+          }]
+        },
+        options: {
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: "bottom"
+            }
           }
         }
-      }
-    });
+      });
+    }
   </script>
 
   <!-- Script untuk checkbox "Pilih Semua" di halaman kelola laporan admin -->

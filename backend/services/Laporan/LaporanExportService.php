@@ -2,10 +2,28 @@
 
 class LaporanExportService
 {
+    private const APP_TIMEZONE = 'Asia/Jakarta';
     public function __construct(
         private LaporanQueryModel $laporanQuery,
         private PegawaiModel $pegawaiModel,
     ) {}
+
+    private function appTimezone(): DateTimeZone
+    {
+        return new DateTimeZone(self::APP_TIMEZONE);
+    }
+
+    private function todayDateString(): string
+    {
+        return (new DateTimeImmutable('today', $this->appTimezone()))->format('Y-m-d');
+    }
+
+    private function parseDate(string $date): ?DateTimeImmutable
+    {
+        $parsed = DateTimeImmutable::createFromFormat('!Y-m-d', $date, $this->appTimezone());
+
+        return $parsed && $parsed->format('Y-m-d') === $date ? $parsed : null;
+    }
 
     public function exportLaporanByAdmin(
         ?int $pegawaiId,
@@ -257,7 +275,7 @@ class LaporanExportService
         ?string $end
     ): array {
         $start = $start ?: '1970-01-01';
-        $end   = $end   ?: date('Y-m-d');
+        $end   = $end   ?: $this->todayDateString();
 
         $this->assertValidDate($start);
         $this->assertValidDate($end);
@@ -271,9 +289,9 @@ class LaporanExportService
 
     private function assertValidDate(string $date): void
     {
-        $d = DateTime::createFromFormat('Y-m-d', $date);
+        $d = $this->parseDate($date);
 
-        if (!$d || $d->format('Y-m-d') !== $date) {
+        if (!$d) {
             throw new Exception("Format tanggal tidak valid.");
         }
     }

@@ -17,14 +17,19 @@ class LaporanQueryModel
                 lh.id        AS laporan_id,
                 lh.tanggal,
                 lh.kegiatan_count,
-                COALESCE(lh.approval_status, 'pending') AS status,
-                lh.approved_by,
-                lh.approved_at,
-                lh.verification_token,
-                lh.document_hash,
-                lh.approval_revoked_at,
-                lh.signature_note,
-                lh.rejection_note,
+
+                lk.id        AS kegiatan_id,
+                lk.kegiatan,
+                lk.output,
+                lk.bukti,
+                COALESCE(lk.approval_status, 'pending') AS status,
+                lk.approved_by,
+                lk.approved_at,
+                lk.verification_token,
+                lk.document_hash,
+                lk.approval_revoked_at,
+                lk.signature_note,
+                lk.rejection_note,
                 admin.nama AS signed_name,
 
                 u.id         AS pegawai_id,
@@ -32,19 +37,14 @@ class LaporanQueryModel
                 u.nip,
                 u.nik,
                 u.jabatan,
-                u.foto       AS foto_pegawai,
-
-                lk.id        AS kegiatan_id,
-                lk.kegiatan,
-                lk.output,
-                lk.bukti
-            FROM laporan_harian lh
+                u.foto       AS foto_pegawai
+            FROM laporan_kegiatan lk
+            JOIN laporan_harian lh
+                ON lh.id = lk.laporan_id
             JOIN user u
                 ON u.id = lh.user_id
             LEFT JOIN user admin
-                ON admin.id = lh.approved_by
-            LEFT JOIN laporan_kegiatan lk
-                ON lk.laporan_id = lh.id
+                ON admin.id = lk.approved_by
         ";
 
         $conditions = [];
@@ -55,14 +55,18 @@ class LaporanQueryModel
             $params['pegawai_id'] = $pegawaiId;
         }
 
-        if ($start !== null && $end !== null) {
-            $conditions[] = 'lh.tanggal BETWEEN :start AND :end';
+        if ($start !== null) {
+            $conditions[] = 'lh.tanggal >= :start';
             $params['start'] = $start;
-            $params['end']   = $end;
+        }
+
+        if ($end !== null) {
+            $conditions[] = 'lh.tanggal <= :end';
+            $params['end'] = $end;
         }
 
         if (in_array($status, ['pending', 'approved', 'rejected'], true)) {
-            $conditions[] = "COALESCE(lh.approval_status, 'pending') = :status";
+            $conditions[] = "COALESCE(lk.approval_status, 'pending') = :status";
             $params['status'] = $status;
         }
 
@@ -88,25 +92,25 @@ class LaporanQueryModel
         SELECT
             lh.id        AS laporan_id,
             lh.tanggal,
-            COALESCE(lh.approval_status, 'pending') AS status,
-            lh.approved_by,
-            lh.approved_at,
-            lh.verification_token,
-            lh.document_hash,
-            lh.approval_revoked_at,
-            lh.signature_note,
-            lh.rejection_note,
-            admin.nama AS signed_name,
 
             lk.id        AS kegiatan_id,
             lk.kegiatan,
             lk.output,
-            lk.bukti
-        FROM laporan_harian lh
+            lk.bukti,
+            COALESCE(lk.approval_status, 'pending') AS status,
+            lk.approved_by,
+            lk.approved_at,
+            lk.verification_token,
+            lk.document_hash,
+            lk.approval_revoked_at,
+            lk.signature_note,
+            lk.rejection_note,
+            admin.nama AS signed_name
+        FROM laporan_kegiatan lk
+        JOIN laporan_harian lh
+            ON lh.id = lk.laporan_id
         LEFT JOIN user admin
-            ON admin.id = lh.approved_by
-        LEFT JOIN laporan_kegiatan lk
-            ON lk.laporan_id = lh.id
+            ON admin.id = lk.approved_by
         WHERE lh.user_id = :pegawai_id
     ";
 
@@ -115,13 +119,17 @@ class LaporanQueryModel
         ];
 
         if ($approvedOnly) {
-            $sql .= " AND lh.approval_status = 'approved' AND lh.approval_revoked_at IS NULL";
+            $sql .= " AND lk.approval_status = 'approved' AND lk.approval_revoked_at IS NULL";
         }
 
-        if ($start !== null && $end !== null) {
-            $sql .= " AND lh.tanggal BETWEEN :start AND :end";
+        if ($start !== null) {
+            $sql .= " AND lh.tanggal >= :start";
             $params['start'] = $start;
-            $params['end']   = $end;
+        }
+
+        if ($end !== null) {
+            $sql .= " AND lh.tanggal <= :end";
+            $params['end'] = $end;
         }
 
         $sql .= " ORDER BY lh.tanggal DESC, lk.id DESC";
@@ -138,30 +146,30 @@ class LaporanQueryModel
             SELECT
                 lh.id        AS laporan_id,
                 lh.tanggal,
-                COALESCE(lh.approval_status, 'pending') AS status,
-                lh.approved_by,
-                lh.approved_at,
-                lh.verification_token,
-                lh.document_hash,
-                lh.approval_revoked_at,
-                lh.signature_note,
-                lh.rejection_note,
-                admin.nama AS signed_name,
-
-                u.id         AS pegawai_id,
-                u.nama       AS nama_pegawai,
 
                 lk.id        AS kegiatan_id,
                 lk.kegiatan,
                 lk.output,
-                lk.bukti
-            FROM laporan_harian lh
+                lk.bukti,
+                COALESCE(lk.approval_status, 'pending') AS status,
+                lk.approved_by,
+                lk.approved_at,
+                lk.verification_token,
+                lk.document_hash,
+                lk.approval_revoked_at,
+                lk.signature_note,
+                lk.rejection_note,
+                admin.nama AS signed_name,
+
+                u.id         AS pegawai_id,
+                u.nama       AS nama_pegawai
+            FROM laporan_kegiatan lk
+            JOIN laporan_harian lh
+                ON lh.id = lk.laporan_id
             JOIN user u
                 ON u.id = lh.user_id
             LEFT JOIN user admin
-                ON admin.id = lh.approved_by
-            LEFT JOIN laporan_kegiatan lk
-                ON lk.laporan_id = lh.id
+                ON admin.id = lk.approved_by
             WHERE lh.id = :id
         ");
 

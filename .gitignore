@@ -1,14 +1,19 @@
 /vendor/
 /ampuh.zip
+/public/*.zip
 /public/uploads/*
 !/public/uploads/
 !/public/uploads/.gitkeep
 !/public/uploads/bukti/
+/public/uploads/bukti/*
 !/public/uploads/bukti/.gitkeep
+!/public/uploads/bukti/.htaccess
 !/public/uploads/foto/
+/public/uploads/foto/*
 !/public/uploads/foto/.gitkeep
 
 .env
 *.log
 .DS_Store
 Thumbs.db
+/backend/test/

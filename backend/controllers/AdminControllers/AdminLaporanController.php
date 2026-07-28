@@ -60,6 +60,17 @@ class AdminLaporanController
         ]);
     }
 
+
+    private function rememberCreateInput(array $r): void
+    {
+        Session::flash('old_admin_laporan_create', [
+            'pegawai_id' => (string)($r['pegawai_id'] ?? ''),
+            'tanggal' => (string)($r['tanggal'] ?? ''),
+            'kegiatan' => array_values(array_map('strval', (array)($r['kegiatan'] ?? []))),
+            'output' => array_values(array_map('strval', (array)($r['output'] ?? []))),
+        ]);
+    }
+
     public function create(array $r): void
     {
         $this->authorize();
@@ -85,6 +96,8 @@ class AdminLaporanController
                 'message' => 'Laporan berhasil ditambahkan.'
             ]);
         } catch (Exception $e) {
+            $this->rememberCreateInput($r);
+
             Session::flash('flash', [
                 'type' => 'danger',
                 'message' => $e->getMessage()
@@ -116,6 +129,7 @@ class AdminLaporanController
                 'message' => 'Laporan berhasil diubah.'
             ]);
         } catch (Exception $e) {
+
             Session::flash('flash', [
                 'type' => 'danger',
                 'message' => $e->getMessage()
@@ -144,6 +158,7 @@ class AdminLaporanController
                 'message' => 'Laporan berhasil dihapus.'
             ]);
         } catch (Exception $e) {
+
             Session::flash('flash', [
                 'type' => 'danger',
                 'message' => $e->getMessage()
@@ -161,19 +176,20 @@ class AdminLaporanController
         try {
             $admin = $this->authService->admin();
             $processed = $this->laporanService->bulkProcessByAdmin(
-                $r['laporan_ids'] ?? [],
+                $r['kegiatan_ids'] ?? $r['laporan_ids'] ?? [],
                 $r['action'] ?? '',
                 (int) $admin['id'],
-                $admin['nama'] ?? 'Administrator',
+                $admin['nama'] ?? 'Ka. TU MTs Negeri 1 Jepara',
                 trim($r['signature_note'] ?? '') ?: null,
                 trim($r['rejection_note'] ?? '') ?: null
             );
 
             Session::flash('flash', [
                 'type' => 'success',
-                'message' => $processed . ' laporan berhasil diproses.'
+                'message' => $processed . ' kegiatan berhasil diproses.'
             ]);
         } catch (Exception $e) {
+
             Session::flash('flash', [
                 'type' => 'danger',
                 'message' => $e->getMessage()

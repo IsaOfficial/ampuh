@@ -2,6 +2,8 @@
 
 class DocumentUploadService
 {
+    private const DEFAULT_MAX_SIZE = 5_242_880; // 5MB
+    private const VIDEO_MAX_SIZE = 52_428_800; // 50MB
     private int $maxImageDimension = 1600;
     private int $jpegQuality = 75;
     private int $pngCompression = 6;
@@ -34,29 +36,49 @@ class DocumentUploadService
         'xml'
     ];
 
-    public function upload(
-        array $file,
-        string $dir,
-        int $maxSize = 5_242_880 // 5MB
-    ): string {
-        // 1. Validasi upload
+    public function validate(array $file, ?int $maxSize = null): string
+    {
         if (!isset($file['error']) || $file['error'] !== UPLOAD_ERR_OK) {
             throw new Exception("Upload file gagal.");
         }
 
-        // 2. Validasi ukuran
-        if ($file['size'] > $maxSize) {
-            throw new Exception("Ukuran file melebihi batas.");
-        }
-
-        // 3. Validasi MIME: semua gambar, PDF, dan semua video.
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mime = finfo_file($finfo, $file['tmp_name']) ?: 'application/octet-stream';
-        finfo_close($finfo);
+        $mime = $this->detectMime($file);
 
         if (!$this->isAllowedMime($mime)) {
             throw new Exception("Tipe file tidak valid. Gunakan gambar, PDF, atau video.");
         }
+
+        $allowedSize = $maxSize ?? $this->maxSizeForMime($mime);
+        if (($file['size'] ?? 0) > $allowedSize) {
+            $limitMb = (int) floor($allowedSize / 1024 / 1024);
+            throw new Exception("Ukuran file maksimal {$limitMb}MB.");
+        }
+
+        return $mime;
+    }
+
+    private function detectMime(array $file): string
+    {
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = finfo_file($finfo, $file['tmp_name']) ?: 'application/octet-stream';
+        finfo_close($finfo);
+
+        return $mime;
+    }
+
+    private function maxSizeForMime(string $mime): int
+    {
+        return str_starts_with($mime, 'video/')
+            ? self::VIDEO_MAX_SIZE
+            : self::DEFAULT_MAX_SIZE;
+    }
+
+    public function upload(
+        array $file,
+        string $dir,
+        ?int $maxSize = null
+    ): string {
+        $mime = $this->validate($file, $maxSize);
 
         // 4. Pastikan folder ada
         // NORMALISASI PATH
@@ -74,7 +96,7 @@ class DocumentUploadService
         $this->protectUploadDirectory($realDir);
 
         // 5. Simpan file. JPG/PNG dikompresi, format lain disimpan normal.
-        $ext = $this->getSafeExtension($file['name']);
+        $ext = $this->getSafeExtension($file['name'], $mime);
         $filename = uniqid('bukti_', true) . '.' . $ext;
         $target = $realDir . DIRECTORY_SEPARATOR . $filename;
 
@@ -106,16 +128,48 @@ class DocumentUploadService
             || $mime === 'application/pdf';
     }
 
-    private function getSafeExtension(string $originalName): string
+    private function getSafeExtension(string $originalName, string $mime): string
     {
         $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
-        $ext = preg_replace('/[^a-z0-9]/', '', $ext) ?: 'bin';
+        $ext = preg_replace('/[^a-z0-9]/', '', $ext) ?: '';
+        $mimeExt = $this->extensionFromMime($mime);
 
-        if (in_array($ext, $this->unsafeExecutableExt, true)) {
-            return 'bin';
+        if ($mime === 'application/pdf') {
+            return 'pdf';
+        }
+
+        if ($mime === 'image/jpeg') {
+            return 'jpg';
+        }
+
+        if ($mime === 'image/png') {
+            return 'png';
+        }
+
+        if ($ext === '' || in_array($ext, $this->unsafeExecutableExt, true)) {
+            return $mimeExt ?? 'bin';
         }
 
         return $ext;
+    }
+
+    private function extensionFromMime(string $mime): ?string
+    {
+        return match ($mime) {
+            'image/gif' => 'gif',
+            'image/webp' => 'webp',
+            'image/bmp' => 'bmp',
+            'image/heic' => 'heic',
+            'image/heif' => 'heif',
+            'video/mp4' => 'mp4',
+            'video/quicktime' => 'mov',
+            'video/webm' => 'webm',
+            'video/x-msvideo' => 'avi',
+            'video/x-matroska' => 'mkv',
+            'video/3gpp' => '3gp',
+            'video/3gpp2' => '3g2',
+            default => null,
+        };
     }
 
     private function protectUploadDirectory(string $dir): void

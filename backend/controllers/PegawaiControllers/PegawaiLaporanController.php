@@ -40,6 +40,16 @@ class PegawaiLaporanController
     }
 
 
+
+    private function rememberCreateInput(array $r): void
+    {
+        Session::flash('old_pegawai_laporan_create', [
+            'tanggal' => (string)($r['tanggal'] ?? ''),
+            'kegiatan' => array_values(array_map('strval', (array)($r['kegiatan'] ?? []))),
+            'output' => array_values(array_map('strval', (array)($r['output'] ?? []))),
+        ]);
+    }
+
     public function create(array $r): void
     {
         try {
@@ -58,6 +68,8 @@ class PegawaiLaporanController
                 'message' => 'Laporan berhasil dikirim.'
             ]);
         } catch (Exception $e) {
+            $this->rememberCreateInput($r);
+
             Session::flash('flash', [
                 'type' => 'danger',
                 'message' => $e->getMessage()
@@ -90,6 +102,7 @@ class PegawaiLaporanController
                 'message' => 'Laporan berhasil diperbarui.'
             ]);
         } catch (Exception $e) {
+
             Session::flash('flash', [
                 'type' => 'danger',
                 'message' => $e->getMessage()
@@ -119,6 +132,7 @@ class PegawaiLaporanController
                 'message' => 'Laporan berhasil dihapus.'
             ]);
         } catch (Exception $e) {
+
             Session::flash('flash', [
                 'type' => 'danger',
                 'message' => $e->getMessage()

@@ -216,3 +216,41 @@
   text-align: center;
   font-size: 14px;
 }
+
+/* -----------------------------------------------------------
+   Evidence Upload Input
+   ----------------------------------------------------------- */
+.evidence-upload .custom-file-label {
+  border-color: #d1d3e2;
+  border-radius: 0.35rem;
+  color: #6e707e;
+  overflow: hidden;
+  padding-right: 4.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.evidence-upload .custom-file-label::after {
+  background-color: #2e8b57;
+  border-color: #2e8b57;
+  color: #fff;
+  content: attr(data-browse);
+  font-weight: 600;
+}
+
+.evidence-upload .custom-file-input:focus ~ .custom-file-label {
+  border-color: #2e8b57;
+  box-shadow: 0 0 0 0.2rem rgba(46, 139, 87, 0.18);
+}
+
+.evidence-upload .custom-file-label.has-file {
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.evidence-upload-hint {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.72rem;
+  color: #858796;
+}

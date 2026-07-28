@@ -9,7 +9,7 @@ class AdminSeeder
         );
 
         $stmt->execute([
-            'Administrator',
+            'Ka. TU MTs Negeri 1 Jepara',
             '9012345678901234',
             password_hash('Admin123!', PASSWORD_DEFAULT),
             'admin'
