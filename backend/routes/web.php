@@ -18,6 +18,8 @@ $router->post('/login', [AuthController::class, 'processLogin'])
 $router->get('/logout', [AuthController::class, 'logout'])
     ->middleware('auth');
 
+$router->get('/verifikasi-laporan', [VerificationController::class, 'verify']);
+
 // =======================================
 // PEGAWAI
 // =======================================
@@ -56,6 +58,7 @@ $router->group('/admin', function ($r) {
     $r->post('/kelola/laporan/create', [AdminLaporanController::class, 'create']);
     $r->post('/kelola/laporan/update', [AdminLaporanController::class, 'update']);
     $r->post('/kelola/laporan/delete', [AdminLaporanController::class, 'delete']);
+    $r->post('/kelola/laporan/bulk-process', [AdminLaporanController::class, 'bulkProcess']);
 
     // Export Laporan
     $r->get('/kelola/laporan/export/pdf', [AdminLaporanExportController::class, 'exportPdf']);

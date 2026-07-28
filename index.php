@@ -5,8 +5,21 @@ error_reporting(E_ALL);
 
 define('BASE_PATH', __DIR__);
 define('PUBLIC_PATH', realpath(__DIR__ . '/public'));
+// Composer Autoload
+$autoloadPaths = [
+    BASE_PATH . '/vendor/autoload.php',
+    BASE_PATH . '/public/assets/vendor/autoload.php',
+];
+
+foreach ($autoloadPaths as $autoloadPath) {
+    if (file_exists($autoloadPath)) {
+        require_once $autoloadPath;
+        break;
+    }
+}
 
 // Config
+require BASE_PATH . '/backend/config/app.php';
 require BASE_PATH . '/backend/config/database.php';
 
 // Core
@@ -35,8 +48,8 @@ require BASE_PATH . '/backend/routes/web.php';
 
 // AdminSeeder
 require BASE_PATH . '/backend/seeders/AdminSeeder.php';
-$seeder = new AdminSeeder();
-$seeder->run($pdo);
+// $seeder = new AdminSeeder();
+// $seeder->run(Database::getConnection());
 
 // Run
 $router->run();

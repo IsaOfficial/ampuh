@@ -1,4 +1,8 @@
 <?php ob_start(); ?>
+<?php
+$today = new DateTimeImmutable('today');
+$minimumReportDate = $today->modify('-3 days');
+?>
 
 <!-- Judul Halaman -->
 <h1 class="h4 mb-4 text-gray-800">Dashboard Pegawai</h1>
@@ -7,7 +11,7 @@
 <div class="card shadow mb-4 p-4">
   <div class="d-flex align-items-center">
     <img
-      src="<?= $pegawai['foto'] ? '/public/uploads/foto/' . $pegawai['foto'] : '/public/uploads/foto/default_profile.svg' ?>"
+      src="<?= !empty($pegawai['foto']) && $pegawai['foto'] !== 'default_profile.svg' ? '/public/uploads/foto/' . $pegawai['foto'] : '/public/assets/img/avatars/default_profile.svg' ?>"
       class="rounded-circle profile-img" />
 
     <div class="ml-5">
@@ -40,14 +44,16 @@
       <label class="col-md-3 col-form-label">Hari, Tanggal :</label>
 
       <div class="col-md-9">
-        <input class="form-control" id="tanggalDisplay" readonly />
-
         <input
           name="tanggal"
           type="date"
           id="tanggalAsli"
-          class="form-control d-none"
-          readonly />
+          class="form-control"
+          value="<?= $today->format('Y-m-d') ?>"
+          min="<?= $minimumReportDate->format('Y-m-d') ?>"
+          max="<?= $today->format('Y-m-d') ?>"
+          required />
+        <small class="form-text text-muted"><span id="tanggalDisplay"></span>. Laporan tertinggal dapat diinput maksimal 3 hari ke belakang.</small>
       </div>
     </div>
 
@@ -64,7 +70,7 @@
         </div>
 
         <div class="col-md-3 mb-2">
-          <input type="file" name="bukti[]" class="form-control" required />
+          <input type="file" name="bukti[]" class="form-control" accept="image/*,application/pdf,video/*" required />
         </div>
 
         <div

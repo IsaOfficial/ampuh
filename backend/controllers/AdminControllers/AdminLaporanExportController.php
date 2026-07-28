@@ -31,6 +31,7 @@ class AdminLaporanExportController
                 : null,
             'start' => $_GET['start'] ?? null,
             'end'   => $_GET['end'] ?? null,
+            'status' => trim($_GET['status'] ?? '') ?: null,
         ];
     }
 
@@ -54,7 +55,8 @@ class AdminLaporanExportController
             $filter['pegawai_id'],
             $filter['start'],
             $filter['end'],
-            $admin['nama'] ?? 'Administrator'
+            $admin['nama'] ?? 'Administrator',
+            $filter['status']
         );
 
         view('admin/export/laporan/pdf', [
@@ -76,7 +78,8 @@ class AdminLaporanExportController
             $filter['pegawai_id'],
             $filter['start'],
             $filter['end'],
-            $admin['nama'] ?? 'Administrator'
+            $admin['nama'] ?? 'Administrator',
+            $filter['status']
         );
 
         header('Content-Type: application/vnd.ms-excel');

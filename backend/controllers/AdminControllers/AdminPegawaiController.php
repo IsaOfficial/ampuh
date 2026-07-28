@@ -26,15 +26,30 @@ class AdminPegawaiController
         $this->authService->requireAdmin();
     }
 
+    private function buildFilter(): array
+    {
+        return [
+            'keyword' => trim($_GET['keyword'] ?? '') ?: null,
+            'jabatan' => trim($_GET['jabatan'] ?? '') ?: null,
+            'jenis_kelamin' => trim($_GET['jenis_kelamin'] ?? '') ?: null,
+        ];
+    }
+
     public function kelolaPegawai(): void
     {
         $this->authorize();
 
-        $pegawaiList = $this->pegawaiModel->getAllPegawai();
+        $filter = $this->buildFilter();
+        $pegawaiList = $this->pegawaiModel->getAllPegawai(
+            $filter['keyword'],
+            $filter['jabatan'],
+            $filter['jenis_kelamin']
+        );
 
         view('admin/kelola_pegawai', [
             'title'   => 'Kelola Pegawai',
-            'pegawai' => $pegawaiList
+            'pegawai' => $pegawaiList,
+            'filter'  => $filter
         ]);
     }
 

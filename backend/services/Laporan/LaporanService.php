@@ -2,6 +2,7 @@
 
 class LaporanService
 {
+    private const PEGAWAI_EDIT_WINDOW_DAYS = 3;
     public function __construct(
         private LaporanHarianModel $laporanHarian,
         private LaporanKegiatanModel $laporanKegiatan,
@@ -59,16 +60,6 @@ class LaporanService
                 if ($files['size'][$i] > 5 * 1024 * 1024) {
                     throw new Exception("Ukuran file maksimal 5MB.");
                 }
-
-                $allowedTypes = [
-                    'image/jpeg',
-                    'image/png',
-                    'application/pdf'
-                ];
-
-                if (!in_array($files['type'][$i], $allowedTypes, true)) {
-                    throw new Exception("Tipe file tidak diizinkan pada kegiatan ke-" . ($i + 1));
-                }
             }
         }
 
@@ -101,16 +92,6 @@ class LaporanService
             if ($file['size'] > 5 * 1024 * 1024) {
                 throw new Exception("Ukuran file maksimal 5MB.");
             }
-
-            $allowedTypes = [
-                'image/jpeg',
-                'image/png',
-                'application/pdf'
-            ];
-
-            if (!in_array($file['type'], $allowedTypes, true)) {
-                throw new Exception("Tipe file tidak diizinkan.");
-            }
         }
     }
 
@@ -126,17 +107,80 @@ class LaporanService
         $this->laporanHarian->recalculateKegiatanCount($laporanId, $count);
     }
 
+    private function assertTanggalEditableByPegawai(string $tanggal): void
+    {
+        $date = DateTimeImmutable::createFromFormat('!Y-m-d', $tanggal);
+        $today = new DateTimeImmutable('today');
+        $minimumDate = $today->modify('-' . self::PEGAWAI_EDIT_WINDOW_DAYS . ' days');
+
+        if (!$date || $date < $minimumDate || $date > $today) {
+            throw new Exception("Laporan hanya dapat ditambah, diubah, atau dihapus sampai 3 hari sebelumnya.");
+        }
+    }
+
+    private function assertEditableByPegawai(int $laporanId): void
+    {
+        $laporan = $this->laporanHarian->findById($laporanId);
+
+        if (!$laporan) {
+            throw new Exception("Laporan tidak ditemukan.");
+        }
+
+        if (($laporan['approval_status'] ?? 'pending') === 'approved') {
+            throw new Exception("Laporan sudah diproses dan ditandatangani admin sehingga tidak dapat diubah.");
+        }
+
+        $this->assertTanggalEditableByPegawai((string) $laporan['tanggal']);
+    }
+
+    public function bulkProcessByAdmin(
+        array $laporanIds,
+        string $action,
+        int $adminId,
+        string $adminName,
+        ?string $signatureNote = null,
+        ?string $rejectionNote = null
+    ): int {
+        $laporanIds = array_values(array_unique(array_filter(array_map('intval', $laporanIds))));
+
+        if (!$laporanIds) {
+            throw new Exception("Pilih minimal satu laporan.");
+        }
+
+        return match ($action) {
+            'approve' => $this->laporanHarian->approveBulk($laporanIds, $adminId, $adminName, $signatureNote),
+            'reject'  => $this->laporanHarian->rejectBulk($laporanIds, $rejectionNote),
+            'delete'  => $this->laporanHarian->deleteBulk($laporanIds),
+            default   => throw new Exception("Aksi bulk tidak valid."),
+        };
+    }
+
     public function createKegiatan(
         int $pegawaiId,
         string $tanggal,
         array $kegiatan,
         array $output,
-        array $files = []
+        array $files = [],
+        bool $revokeApprovedOnExisting = false
     ): void {
 
         $this->validateCreate($tanggal, $kegiatan, $output, $files);
 
+        if (!$revokeApprovedOnExisting) {
+            $this->assertTanggalEditableByPegawai($tanggal);
+        }
+
         $laporan = $this->laporanHarian->findByUserAndDate($pegawaiId, $tanggal);
+
+        if ($laporan && ($laporan['approval_status'] ?? 'pending') === 'approved') {
+            if (!$revokeApprovedOnExisting) {
+                throw new Exception("Laporan pada tanggal ini sudah disahkan sehingga tidak dapat ditambah.");
+            }
+
+            $this->laporanHarian->revokeApproval((int) $laporan['id']);
+        } elseif ($laporan && ($laporan['approval_status'] ?? 'pending') === 'rejected') {
+            $this->laporanHarian->markPending((int) $laporan['id']);
+        }
 
         $laporanId = $laporan
             ? (int)$laporan['id']
@@ -205,6 +249,9 @@ class LaporanService
             throw new Exception("Akses tidak diizinkan.");
         }
 
+        $this->assertEditableByPegawai((int) $laporan['id']);
+        $this->laporanHarian->markPending((int) $laporan['id']);
+
         $bukti = $data['bukti'];
 
         if (!empty($file['name'])) {
@@ -258,6 +305,9 @@ class LaporanService
         if ((int) $laporan['user_id'] !== $pegawaiId) {
             throw new Exception("Akses tidak diizinkan.");
         }
+
+        $this->assertEditableByPegawai((int) $laporan['id']);
+        $this->laporanHarian->markPending((int) $laporan['id']);
 
         if (!empty($data['bukti'])) {
             $this->documentUploadService->delete(
@@ -314,6 +364,8 @@ class LaporanService
 
         $laporanId = (int)$data['laporan_id'];
 
+        $this->laporanHarian->revokeApproval($laporanId);
+
         $this->refreshKegiatanCount($laporanId);
     }
 
@@ -335,6 +387,8 @@ class LaporanService
         $this->laporanKegiatan->delete($kegiatanId);
 
         $laporanId = (int)$data['laporan_id'];
+
+        $this->laporanHarian->revokeApproval($laporanId);
 
         $this->refreshKegiatanCount($laporanId);
     }

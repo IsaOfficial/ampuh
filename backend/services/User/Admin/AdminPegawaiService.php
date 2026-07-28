@@ -139,8 +139,8 @@ class AdminPegawaiService
         }
     }
 
-    public function getAll(?string $keyword = null): array
+    public function getAll(?string $keyword = null, ?string $jabatan = null, ?string $jenisKelamin = null): array
     {
-        return $this->pegawaiModel->getAllPegawai($keyword);
+        return $this->pegawaiModel->getAllPegawai($keyword, $jabatan, $jenisKelamin);
     }
 }

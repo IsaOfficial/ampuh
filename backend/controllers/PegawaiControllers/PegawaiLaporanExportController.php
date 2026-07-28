@@ -36,45 +36,65 @@ class PegawaiLaporanExportController
 
     public function exportPdf(): void
     {
-        $pegawai = $this->authService->pegawai();
-        $filter  = $this->buildFilter($pegawai);
+        try {
+            $pegawai = $this->authService->pegawai();
+            $filter  = $this->buildFilter($pegawai);
 
-        $result = $this->laporanExportService->exportLaporanByPegawai(
-            $pegawaiId = $pegawai['id'],
-            $filter['start'],
-            $filter['end']
-        );
+            $result = $this->laporanExportService->exportLaporanByPegawai(
+                $filter['pegawai_id'],
+                $filter['start'],
+                $filter['end']
+            );
 
-        view('pegawai/export/pdf', [
-            'title'   => $result['title'],
-            'laporan' => $result['data'],
-            'pegawai'    => $pegawai,
-            'start'   => $filter['start'],
-            'end'     => $filter['end'],
-        ]);
+            view('pegawai/export/pdf', [
+                'title'   => $result['title'],
+                'laporan' => $result['data'],
+                'pegawai' => $pegawai,
+                'start'   => $filter['start'],
+                'end'     => $filter['end'],
+            ]);
+        } catch (Exception $e) {
+            Session::flash('flash', [
+                'type' => 'warning',
+                'message' => $e->getMessage()
+            ]);
+
+            header('Location: /pegawai/laporan');
+            exit;
+        }
     }
 
     public function exportExcel(): void
     {
-        $pegawai = $this->authService->pegawai();
-        $filter  = $this->buildFilter($pegawai);
+        try {
+            $pegawai = $this->authService->pegawai();
+            $filter  = $this->buildFilter($pegawai);
 
-        $result = $this->laporanExportService->exportLaporanByPegawai(
-            $filter['pegawai_id'],
-            $filter['start'],
-            $filter['end']
-        );
+            $result = $this->laporanExportService->exportLaporanByPegawai(
+                $filter['pegawai_id'],
+                $filter['start'],
+                $filter['end']
+            );
 
-        header('Content-Type: application/vnd.ms-excel');
-        header('Content-Disposition: attachment; filename="' . $result['filename'] . '"');
-        header('Pragma: no-cache');
-        header('Expires: 0');
+            header('Content-Type: application/vnd.ms-excel');
+            header('Content-Disposition: attachment; filename="' . $result['filename'] . '"');
+            header('Pragma: no-cache');
+            header('Expires: 0');
 
-        view('pegawai/export/excel', [
-            'laporan' => $result['data'],
-            'pegawai' => $pegawai,
-            'start'   => $filter['start'],
-            'end'     => $filter['end'],
-        ]);
+            view('pegawai/export/excel', [
+                'laporan' => $result['data'],
+                'pegawai' => $pegawai,
+                'start'   => $filter['start'],
+                'end'     => $filter['end'],
+            ]);
+        } catch (Exception $e) {
+            Session::flash('flash', [
+                'type' => 'warning',
+                'message' => $e->getMessage()
+            ]);
+
+            header('Location: /pegawai/laporan');
+            exit;
+        }
     }
 }

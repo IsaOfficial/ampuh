@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title><?= $title ?></title>
+    <title><?= $title ?? 'Export Laporan' ?></title>
     <style>
         body {
             font-family: "Arial", Helvetica, sans-serif;
@@ -77,11 +77,31 @@
             text-align: right;
         }
 
+        .approval-note {
+            font-size: 10px;
+        }
+
         .signature-name {
             font-weight: bold;
         }
 
         @media print {
+            .approval-qr-code {
+                display: block !important;
+                visibility: visible !important;
+                width: 100px !important;
+                height: 100px !important;
+                object-fit: contain;
+                margin: 6px 0 6px auto;
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+
+            .approval-block {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+
             body {
                 margin: 10mm;
             }
@@ -91,21 +111,32 @@
 
 <body onload="window.print()">
 
+    <?php
+    $signedReport = $laporan[0] ?? [];
+    $verificationUrl = '';
+    $qrDataUri = '';
+
+    if (($signedReport['status'] ?? '') === 'approved' && !empty($signedReport['verification_token'])) {
+        $verificationUrl = AppConfig::url('/verifikasi-laporan?token=' . urlencode($signedReport['verification_token']));
+        $qrDataUri = QrCodeHelper::dataUri($verificationUrl, 220);
+    }
+    ?>
+
     <div class="header">
-        <h2>LAPORAN HARIAN PEGAWAI</h2>
+        <h2>LAPORAN KEGIATAN PEGAWAI</h2>
         <h4>Rekapitulasi Laporan Kegiatan</h4>
     </div>
 
     <div class="info">
-        <strong>Nama Pegawai:</strong> <?= htmlspecialchars($pegawai['nama']) ?><br>
+        <strong>Nama&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp:</strong> <?= htmlspecialchars($pegawai['nama']) ?><br>
 
         <?php if (!empty($pegawai['nip'])): ?>
-            <strong>NIP:</strong> <?= htmlspecialchars($pegawai['nip']) ?><br>
+            <strong>NIP&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp:</strong> <?= htmlspecialchars($pegawai['nip']) ?><br>
         <?php elseif (!empty($pegawai['nik'])): ?>
-            <strong>NIK:</strong> <?= htmlspecialchars($pegawai['nik']) ?><br>
+            <strong>NIK&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp:</strong> <?= htmlspecialchars($pegawai['nik']) ?><br>
         <?php endif; ?>
 
-        <strong>Periode:</strong>
+        <strong>Periode&nbsp&nbsp&nbsp:</strong>
         <?php if ($start && $end): ?>
             <?= htmlspecialchars($start) ?> s/d <?= htmlspecialchars($end) ?>
         <?php elseif ($start): ?>
@@ -163,12 +194,20 @@
 
     <div class="footer">
         Jepara, <?= date('d M Y') ?>
-        <div class="signature" style="margin-top: 50px; text-align: right;">
-            ____________________________<br>
-            <span class="signature-name"><?= htmlspecialchars($pegawai['nama']) ?></span><br>
-            <span class="signature-id">
-                <?= !empty($pegawai['nip']) ? 'NIP. ' . htmlspecialchars($pegawai['nip']) : 'NIK. ' . htmlspecialchars($pegawai['nik'] ?? '-') ?>
-            </span>
+        <div class="signature approval-block" style="margin-top: 10px; text-align: right;">
+            <?php if (!empty($qrDataUri)): ?>
+                <img src="<?= htmlspecialchars($qrDataUri) ?>" alt="QR Code Verifikasi Dokumen" class="approval-qr-code">
+                <div class="approval-note">Laporan ini telah disahkan secara elektronik.</div>
+                <div class="approval-note">Kode: <?= htmlspecialchars(substr($signedReport['verification_token'], 0, 12)) ?></div>
+            <?php else: ?>
+                <div class="approval-note">Laporan belum disahkan.</div>
+            <?php endif; ?>
+            <div class="approval-note">Disahkan pada:
+                <span><?= !empty($signedReport['approved_at']) ? date('d/m/Y H:i', strtotime($signedReport['approved_at'])) : '-' ?></span>
+            </div>
+            <?php if (!empty($signedReport['signature_note'])): ?>
+                <div class="approval-note"><?= htmlspecialchars($signedReport['signature_note']) ?></div>
+            <?php endif; ?>
         </div>
     </div>
 

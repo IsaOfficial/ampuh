@@ -1,4 +1,11 @@
 <?php ob_start(); ?>
+<?php
+$filter = $filter ?? [];
+$selectedPegawaiId = (string) ($filter['pegawai_id'] ?? '');
+$selectedStatus = (string) ($filter['status'] ?? '');
+$selectedStart = (string) ($filter['start'] ?? '');
+$selectedEnd = (string) ($filter['end'] ?? '');
+?>
 
 <!-- Judul Halaman -->
 <h1 class="h4 mb-4 text-gray-800">Kelola Laporan</h1>
@@ -7,7 +14,7 @@
 <div class="card shadow mb-4 border-left-success">
 
   <div class="card-header py-3">
-    <h6 class="m-0 font-weight-bold text-success">Cetak Laporan</h6>
+    <h6 class="m-0 font-weight-bold text-success">Filter & Cetak Laporan</h6>
   </div>
 
   <div class="card-body">
@@ -17,7 +24,7 @@
         <select name="pegawai_id" class="form-control">
           <option value="">-- Semua Pegawai --</option>
           <?php foreach ($pegawai_list as $p): ?>
-            <option value="<?= $p['id'] ?>">
+            <option value="<?= $p['id'] ?>" <?= $selectedPegawaiId === (string) $p['id'] ? 'selected' : '' ?>>
               <?= htmlspecialchars($p['nama']) ?>
             </option>
           <?php endforeach; ?>
@@ -35,19 +42,35 @@
 
       <div class="col-md-3 mb-3">
         <label class="small text-muted">Tanggal Awal</label>
-        <input type="date" name="start" class="form-control" />
+        <input type="date" name="start" class="form-control" value="<?= htmlspecialchars($selectedStart) ?>" />
       </div>
 
       <div class="col-md-3 mb-3">
         <label class="small text-muted">Tanggal Akhir</label>
-        <input type="date" name="end" class="form-control" />
+        <input type="date" name="end" class="form-control" value="<?= htmlspecialchars($selectedEnd) ?>" />
+      </div>
+
+      <div class="col-md-3 mb-3">
+        <label class="small text-muted">Status Laporan</label>
+        <select name="status" class="form-control">
+          <option value="" <?= $selectedStatus === '' ? 'selected' : '' ?>>Semua Status</option>
+          <option value="pending" <?= $selectedStatus === 'pending' ? 'selected' : '' ?>>Menunggu</option>
+          <option value="approved" <?= $selectedStatus === 'approved' ? 'selected' : '' ?>>Disahkan</option>
+          <option value="rejected" <?= $selectedStatus === 'rejected' ? 'selected' : '' ?>>Ditolak</option>
+        </select>
       </div>
 
       <!-- Tombol Cetak -->
-      <div class="col-md-3 mb-3 d-flex align-items-end justify-content-end">
+      <div class="col-md-12 mb-3 d-flex align-items-end justify-content-end">
         <div>
+          <button type="submit" class="btn btn-info mr-2" style="min-width: 96px; white-space: nowrap;">
+            <i class="fas fa-filter"></i> Terapkan
+          </button>
+
+          <a href="/admin/kelola/laporan" class="btn btn-secondary mr-2" style="min-width: 96px; white-space: nowrap;">Reset</a>
+
           <button
-            type=" submit"
+            type="submit"
             class="btn btn-danger mr-2"
             formaction="laporan/export/pdf"
             formtarget="_blank">
@@ -104,7 +127,7 @@
                 <select name="pegawai_id" class="form-control" required>
                   <option value="">-- Pilih Pegawai --</option>
                   <?php foreach ($pegawai_list as $p): ?>
-                    <option value="<?= $p['id'] ?>">
+            <option value="<?= $p['id'] ?>" <?= $selectedPegawaiId === (string) $p['id'] ? 'selected' : '' ?>>
                       <?= htmlspecialchars($p['nama']) ?>
                     </option>
                   <?php endforeach; ?>
@@ -137,7 +160,7 @@
                   </div>
 
                   <div class="col-md-3 mb-2">
-                    <input type="file" name="bukti[]" class="form-control" required />
+                    <input type="file" name="bukti[]" class="form-control" accept="image/*,application/pdf,video/*" required />
                   </div>
 
                   <div
@@ -169,20 +192,25 @@
 
   <div class="card-body">
     <div class="table-responsive">
+
       <table
         class="table table-bordered table-striped"
         id="dataTable"
         width="100%">
         <thead class="bg-success text-white text-center">
           <tr>
+            <th width="30">
+              <input type="checkbox" id="selectAll"> Pilih Semua
+            </th>
             <th>No</th>
             <th>Hari & Tanggal</th>
+            <th>Status</th>
             <th>Foto</th>
             <th>Nama Pegawai</th>
             <th>Kegiatan</th>
             <th>Output</th>
             <th>Bukti</th>
-            <th width="120">Aksi</th>
+            <th width="80">Aksi</th>
           </tr>
         </thead>
 
@@ -191,12 +219,29 @@
             <?php $no = 1;
             foreach ($laporan as $row): ?>
               <tr>
+                <td><input type="checkbox" class="rowCheckbox" form="bulkProcessForm" name="laporan_ids[]" value="<?= (int) $row['laporan_id'] ?>"></td>
                 <td><?= $no++ ?></td>
                 <td><?= DateHelper::hariTanggalIndo($row['tanggal']); ?></td>
+                <td class="text-center">
+                  <?php if (($row['status'] ?? 'pending') === 'approved'): ?>
+                    <span class="badge badge-success">Ditandatangani</span><br>
+                    <small><?= htmlspecialchars($row['signed_name'] ?? '-') ?></small>
+                    <?php if (!empty($row['verification_token'])): ?>
+                      <br><small>Kode: <?= htmlspecialchars(substr($row['verification_token'], 0, 12)) ?></small>
+                    <?php endif; ?>
+                  <?php elseif (($row['status'] ?? 'pending') === 'rejected'): ?>
+                    <span class="badge badge-danger">Ditolak</span>
+                    <?php if (!empty($row['rejection_note'])): ?>
+                      <br><small><?= htmlspecialchars($row['rejection_note']) ?></small>
+                    <?php endif; ?>
+                  <?php else: ?>
+                    <span class="badge badge-warning">Menunggu</span>
+                  <?php endif; ?>
+                </td>
 
                 <td class="text-center">
                   <img
-                    src="<?= $row['foto_pegawai'] ? '/public/uploads/foto/' . $row['foto_pegawai'] : '/public/assets/img/avatars/default_profile.svg' ?>"
+                    src="<?= !empty($row['foto_pegawai']) && $row['foto_pegawai'] !== 'default_profile.svg' ? '/public/uploads/foto/' . $row['foto_pegawai'] : '/public/assets/img/avatars/default_profile.svg' ?>"
                     alt="Foto Profil Pegawai"
                     class="profile-img-mini mb-3" />
                 </td>
@@ -282,7 +327,7 @@
 
                             <div class="form-group">
                               <label>Ubah Bukti (opsional)</label>
-                              <input type="file" class="form-control" name="bukti">
+                              <input type="file" class="form-control" name="bukti" accept="image/*,application/pdf,video/*">
                             </div>
 
                             <?php if ($row['bukti']): ?>
@@ -348,16 +393,120 @@
             <?php endforeach; ?>
           <?php else: ?>
             <tr>
-              <td colspan="8" class="text-center text-muted">Tidak ada laporan ditemukan.</td>
+              <td colspan="10" class="text-center text-muted">Tidak ada laporan ditemukan.</td>
             </tr>
           <?php endif; ?>
         </tbody>
 
       </table>
+      <form method="POST" action="/admin/kelola/laporan/bulk-process" id="bulkProcessForm">
+        <?= Csrf::input() ?>
+        <div class="form-row align-items-end mt-3">
+          <div class="col-md-3 mb-2">
+            <label class="small text-muted">Aksi Kolektif</label>
+            <select name="action" id="bulkAction" class="form-control" required>
+              <option value="">-- Pilih Aksi --</option>
+              <option value="approve">Setujui & Tanda Tangani</option>
+              <option value="reject">Tolak</option>
+              <option value="delete">Hapus</option>
+            </select>
+          </div>
+
+          <div class="col-md-4 mb-2" id="signatureNoteGroup">
+            <label class="small text-muted">Catatan Tanda Tangan Digital</label>
+            <input type="text" name="signature_note" class="form-control" placeholder="Opsional, contoh: Diverifikasi oleh admin">
+          </div>
+
+          <div class="col-md-4 mb-2 d-none" id="rejectionNoteGroup">
+            <label class="small text-muted">Alasan Penolakan</label>
+            <input type="text" name="rejection_note" id="rejectionNote" class="form-control" placeholder="Wajib diisi saat menolak laporan">
+          </div>
+
+          <div class="col-md-5 mb-2 text-right">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-check-double"></i> Jalankan
+            </button>
+          </div>
+        </div>
+      </form>
     </div>
   </div>
 </div>
 
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var selectAll = document.getElementById('selectAll');
+    var checkboxes = document.querySelectorAll('.rowCheckbox');
+    var bulkForm = document.getElementById('bulkProcessForm');
+    var bulkAction = document.getElementById('bulkAction');
+    var signatureNoteGroup = document.getElementById('signatureNoteGroup');
+    var rejectionNoteGroup = document.getElementById('rejectionNoteGroup');
+    var rejectionNote = document.getElementById('rejectionNote');
+
+    function selectedCount() {
+      var count = 0;
+      checkboxes.forEach(function (checkbox) {
+        if (checkbox.checked) {
+          count++;
+        }
+      });
+      return count;
+    }
+
+    function syncBulkFields() {
+      var action = bulkAction ? bulkAction.value : '';
+      if (!signatureNoteGroup || !rejectionNoteGroup || !rejectionNote) {
+        return;
+      }
+
+      signatureNoteGroup.classList.toggle('d-none', action === 'reject' || action === 'delete');
+      rejectionNoteGroup.classList.toggle('d-none', action !== 'reject');
+      rejectionNote.required = action === 'reject';
+    }
+
+    if (selectAll) {
+      selectAll.addEventListener('change', function () {
+        checkboxes.forEach(function (checkbox) {
+          checkbox.checked = selectAll.checked;
+        });
+      });
+    }
+
+    if (bulkAction) {
+      bulkAction.addEventListener('change', syncBulkFields);
+      syncBulkFields();
+    }
+
+    if (bulkForm) {
+      bulkForm.addEventListener('submit', function (event) {
+        var count = selectedCount();
+        var action = bulkAction ? bulkAction.value : '';
+        var labels = {
+          approve: 'menyetujui dan menandatangani',
+          reject: 'menolak',
+          delete: 'menghapus'
+        };
+
+        if (!count) {
+          event.preventDefault();
+          alert('Pilih minimal satu laporan terlebih dahulu.');
+          return;
+        }
+
+        if (action === 'reject' && rejectionNote && rejectionNote.value.trim() === '') {
+          event.preventDefault();
+          alert('Alasan penolakan wajib diisi.');
+          rejectionNote.focus();
+          return;
+        }
+
+        if (!confirm('Yakin ingin ' + (labels[action] || 'memproses') + ' ' + count + ' laporan yang dipilih?')) {
+          event.preventDefault();
+        }
+      });
+    }
+  });
+</script>
 <?php
 $content = ob_get_clean();
 

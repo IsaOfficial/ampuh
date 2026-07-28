@@ -39,12 +39,24 @@ class AdminLaporanController
         $this->authorize();
 
         $pegawaiList = $this->pegawaiModel->getAllPegawai();
-        $laporan     = $this->laporanQuery->getLaporanByAdmin();
+        $filter = [
+            'pegawai_id' => isset($_GET['pegawai_id']) && $_GET['pegawai_id'] !== '' ? (int) $_GET['pegawai_id'] : null,
+            'start' => trim($_GET['start'] ?? '') ?: null,
+            'end' => trim($_GET['end'] ?? '') ?: null,
+            'status' => trim($_GET['status'] ?? '') ?: null,
+        ];
+        $laporan = $this->laporanQuery->getLaporanByAdmin(
+            $filter['pegawai_id'],
+            $filter['start'],
+            $filter['end'],
+            $filter['status']
+        );
 
         view('admin/kelola_laporan', [
             'title'        => 'Kelola Laporan',
             'laporan'      => $laporan,
-            'pegawai_list' => $pegawaiList
+            'pegawai_list' => $pegawaiList,
+            'filter'       => $filter
         ]);
     }
 
@@ -64,7 +76,8 @@ class AdminLaporanController
                 $tanggal,
                 $kegiatan,
                 $output,
-                $files
+                $files,
+                true
             );
 
             Session::flash('flash', [
@@ -129,6 +142,36 @@ class AdminLaporanController
             Session::flash('flash', [
                 'type' => 'success',
                 'message' => 'Laporan berhasil dihapus.'
+            ]);
+        } catch (Exception $e) {
+            Session::flash('flash', [
+                'type' => 'danger',
+                'message' => $e->getMessage()
+            ]);
+        }
+
+        header('Location: /admin/kelola/laporan');
+        exit;
+    }
+
+    public function bulkProcess(array $r): void
+    {
+        $this->authorize();
+
+        try {
+            $admin = $this->authService->admin();
+            $processed = $this->laporanService->bulkProcessByAdmin(
+                $r['laporan_ids'] ?? [],
+                $r['action'] ?? '',
+                (int) $admin['id'],
+                $admin['nama'] ?? 'Administrator',
+                trim($r['signature_note'] ?? '') ?: null,
+                trim($r['rejection_note'] ?? '') ?: null
+            );
+
+            Session::flash('flash', [
+                'type' => 'success',
+                'message' => $processed . ' laporan berhasil diproses.'
             ]);
         } catch (Exception $e) {
             Session::flash('flash', [

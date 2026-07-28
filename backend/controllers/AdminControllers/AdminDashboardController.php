@@ -43,6 +43,7 @@ class AdminDashboardController
             'totalLaporanHarian'   => $this->laporanHarianModel->countAll(),
             'totalLaporanKegiatan' => $this->laporanKegiatanModel->countAll(),
             'belumKirimHariIni'    => $this->laporanHarianModel->countBelumKirimHariIni(),
+            'approvalStatus'       => $this->laporanHarianModel->countByApprovalStatus(),
         ];
 
         // =========================

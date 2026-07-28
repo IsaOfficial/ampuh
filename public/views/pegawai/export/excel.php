@@ -1,3 +1,4 @@
+<?php $signedReport = $laporan[0] ?? []; ?>
 <style>
     body {
         font-family: Arial, Helvetica, sans-serif;
@@ -54,7 +55,7 @@
 <table>
     <!-- Header Title -->
     <tr>
-        <th colspan="5" class="header-title">LAPORAN HARIAN PEGAWAI</th>
+        <th colspan="5" class="header-title">LAPORAN KEGIATAN PEGAWAI</th>
     </tr>
     <tr>
         <th colspan="5" class="header-title">Rekapitulasi Laporan Kegiatan</th>
@@ -121,4 +122,16 @@
             </tr>
         <?php endforeach; ?>
     <?php endif; ?>
+
+    <tr>
+        <td colspan="5" class="info">
+            <strong>Pengesahan Digital:</strong><br>
+            Nama: <?= htmlspecialchars($signedReport['signed_name'] ?? '-') ?><br>
+            Waktu: <?= !empty($signedReport['approved_at']) ? date('d/m/Y H:i', strtotime($signedReport['approved_at'])) : '-' ?><br>
+            <?php if (!empty($signedReport['signature_note'])): ?>
+                Catatan: <?= htmlspecialchars($signedReport['signature_note']) ?><br>
+            <?php endif; ?>
+            Kode: <?= htmlspecialchars($signedReport['verification_token'] ?? '-') ?>
+        </td>
+    </tr>
 </table>

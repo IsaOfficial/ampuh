@@ -8,12 +8,38 @@ class PegawaiModel
     {
         $this->db = Database::getConnection();
     } /* ========================= * READ * ========================= */
-    public function getAllPegawai(): array
+    public function getAllPegawai(?string $keyword = null, ?string $jabatan = null, ?string $jenisKelamin = null): array
     {
-        $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE role = 'pegawai' ORDER BY nama ASC, jabatan ASC ");
-        $stmt->execute();
+        $sql = "SELECT * FROM {$this->table} WHERE role = 'pegawai'";
+        $conditions = [];
+        $params = [];
+
+        if ($keyword !== null && trim($keyword) !== '') {
+            $conditions[] = "(nama LIKE :keyword OR nip LIKE :keyword OR nik LIKE :keyword OR jabatan LIKE :keyword OR email LIKE :keyword OR no_wa LIKE :keyword)";
+            $params[':keyword'] = '%' . trim($keyword) . '%';
+        }
+
+        if ($jabatan !== null && trim($jabatan) !== '') {
+            $conditions[] = "jabatan = :jabatan";
+            $params[':jabatan'] = trim($jabatan);
+        }
+
+        if ($jenisKelamin !== null && trim($jenisKelamin) !== '') {
+            $conditions[] = "jenis_kelamin = :jenis_kelamin";
+            $params[':jenis_kelamin'] = trim($jenisKelamin);
+        }
+
+        if ($conditions) {
+            $sql .= ' AND ' . implode(' AND ', $conditions);
+        }
+
+        $sql .= ' ORDER BY nama ASC, jabatan ASC';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
     public function findPegawaiById(int $id): ?array
     {
         $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE id = :id AND role = 'pegawai' LIMIT 1");

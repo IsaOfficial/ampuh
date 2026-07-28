@@ -1,4 +1,9 @@
 <?php ob_start(); ?>
+<?php
+$hasApprovedReport = !empty(array_filter($laporan ?? [], fn ($row) => ($row['status'] ?? 'pending') === 'approved'));
+$today = new DateTimeImmutable('today');
+$editableLimitDate = $today->modify('-3 days');
+?>
 
 <!-- Judul Halaman -->
 <h1 class="h4 mb-4 text-gray-800">Riwayat Laporan Kegiatan</h1>
@@ -37,7 +42,7 @@
         <div>
           <button
             type="submit"
-            class="btn btn-danger mr-2"
+            class="btn btn-danger mr-2" <?= $hasApprovedReport ? '' : 'disabled' ?>
             formaction="laporan/export/pdf"
             formtarget="_blank">
             <i class="fas fa-file-pdf"></i> PDF
@@ -45,12 +50,20 @@
 
           <button
             type="submit"
-            class="btn btn-madrasah"
+            class="btn btn-madrasah" <?= $hasApprovedReport ? '' : 'disabled' ?>
             formaction="laporan/export/excel">
             <i class="fas fa-file-excel"></i> Excel
           </button>
         </div>
       </div>
+
+      <?php if (!$hasApprovedReport): ?>
+        <div class="col-12">
+          <div class="alert alert-warning mb-0 py-2">
+            Laporan baru bisa dicetak setelah admin menyetujui dan memberikan tanda tangan digital.
+          </div>
+        </div>
+      <?php endif; ?>
 
     </form>
   </div>
@@ -83,6 +96,7 @@
             <th>Kegiatan</th>
             <th>Output</th>
             <th>Bukti</th>
+            <th>Status</th>
             <th width="120">Aksi</th>
           </tr>
         </thead>
@@ -91,6 +105,15 @@
           <?php if (!empty($laporan)): ?>
             <?php $no = 1;
             foreach ($laporan as $row): ?>
+              <?php
+              $rowDate = DateTimeImmutable::createFromFormat('!Y-m-d', (string) ($row['tanggal'] ?? ''));
+              $isApproved = (($row['status'] ?? 'pending') === 'approved');
+              $isOutsideEditWindow = !$rowDate || $rowDate < $editableLimitDate || $rowDate > $today;
+              $disablePegawaiAction = $isApproved || $isOutsideEditWindow;
+              $disablePegawaiTitle = $isApproved
+                ? 'Laporan sudah disahkan'
+                : ($isOutsideEditWindow ? 'Batas edit maksimal 3 hari sebelumnya' : '');
+              ?>
               <tr>
                 <td class="text-center"><?= $no++ ?></td>
                 <td><?= DateHelper::hariTanggalIndo($row['tanggal']); ?></td>
@@ -109,20 +132,52 @@
                 </td>
 
                 <td class="text-center">
-                  <div class="btn-group">
-                    <button class="btn btn-warning btn-sm"
-                      data-toggle="modal"
-                      data-target="#editModal-<?= $row['kegiatan_id'] ?>">
-                      <i class="fas fa-edit"></i>
-                    </button>
+                  <?php if (($row['status'] ?? 'pending') === 'approved'): ?>
+                    <span class="badge badge-success">Siap Cetak</span><br>
+                    <small>Ditandatangani admin</small>
+                  <?php elseif (($row['status'] ?? 'pending') === 'rejected'): ?>
+                    <span class="badge badge-danger">Ditolak</span>
+                    <?php if (!empty($row['rejection_note'])): ?>
+                      <br><small><?= htmlspecialchars($row['rejection_note']) ?></small>
+                    <?php endif; ?>
+                    <?php if (!empty($isOutsideEditWindow)): ?>
+                      <br><small class="text-muted">Batas edit sudah lewat</small>
+                    <?php endif; ?>
+                  <?php else: ?>
+                    <span class="badge badge-warning">Menunggu</span><br>
+                    <small>Belum bisa dicetak</small>
+                    <?php if (!empty($isOutsideEditWindow)): ?>
+                      <br><small class="text-muted">Batas edit sudah lewat</small>
+                    <?php endif; ?>
+                  <?php endif; ?>
+                </td>
 
-                    <button class="btn btn-danger btn-sm ml-1"
-                      data-toggle="modal"
-                      data-target="#deleteModal-<?= $row['kegiatan_id'] ?>">
-                      <i class="fas fa-trash"></i>
-                    </button>
+                <td class="text-center">
+                  <?php if ($disablePegawaiAction): ?>
+                    <span title="<?= htmlspecialchars($disablePegawaiTitle) ?>">
+                      <button
+                        type="button"
+                        class="btn btn-secondary btn-sm"
+                        disabled
+                        aria-label="<?= htmlspecialchars($disablePegawaiTitle) ?>">
+                        <i class="fas fa-lock"></i>
+                      </button>
+                    </span>
+                  <?php else: ?>
+                    <div class="btn-group">
+                      <button class="btn btn-warning btn-sm"
+                        data-toggle="modal"
+                        data-target="#editModal-<?= $row['kegiatan_id'] ?>">
+                        <i class="fas fa-edit"></i>
+                      </button>
 
-                  </div>
+                      <button class="btn btn-danger btn-sm ml-1"
+                        data-toggle="modal"
+                        data-target="#deleteModal-<?= $row['kegiatan_id'] ?>">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  <?php endif; ?>
 
                   <!-- Modal Edit -->
                   <div class="modal fade" id="editModal-<?= $row['kegiatan_id'] ?>" tabindex="-1" aria-hidden="true">
@@ -170,7 +225,7 @@
 
                             <div class="form-group">
                               <label>Ubah Bukti (opsional)</label>
-                              <input type="file" class="form-control" name="bukti">
+                              <input type="file" class="form-control" name="bukti" accept="image/*,application/pdf,video/*">
                             </div>
 
                           </div>
@@ -227,7 +282,7 @@
 
           <?php else: ?>
             <tr>
-              <td colspan="6" class="text-center text-muted">Belum ada laporan.</td>
+              <td colspan="7" class="text-center text-muted">Belum ada laporan.</td>
             </tr>
           <?php endif; ?>
 

@@ -108,28 +108,48 @@
   <script>
     // Fungsi untuk set tanggal ke input
     function setTanggal(displayId, asliId) {
-      const now = new Date();
+      const input = document.getElementById(asliId);
+      const display = document.getElementById(displayId);
 
-      // Format YYYY-MM-DD
+      if (!input) {
+        return;
+      }
+
+      const now = new Date();
       const y = now.getFullYear();
       const m = String(now.getMonth() + 1).padStart(2, "0");
       const d = String(now.getDate()).padStart(2, "0");
-      document.getElementById(asliId).value = `${y}-${m}-${d}`;
 
-      // Format lokal Indonesia
+      if (!input.value) {
+        input.value = `${y}-${m}-${d}`;
+      }
+
       const opsi = {
         weekday: "long",
         year: "numeric",
         month: "long",
         day: "numeric",
       };
-      document.getElementById(displayId).value = now.toLocaleDateString(
-        "id-ID",
-        opsi
-      );
+
+      const updateDisplay = () => {
+        if (!display || !input.value) {
+          return;
+        }
+
+        const selectedDate = new Date(`${input.value}T00:00:00`);
+        const formattedDate = selectedDate.toLocaleDateString("id-ID", opsi);
+
+        if ("value" in display) {
+          display.value = formattedDate;
+        } else {
+          display.textContent = formattedDate;
+        }
+      };
+
+      input.addEventListener("change", updateDisplay);
+      updateDisplay();
     }
 
-    // Panggil fungsinya
     setTanggal("tanggalDisplay", "tanggalAsli");
   </script>
 
@@ -157,7 +177,7 @@
             </div>
             
             <div class="col-md-3 mb-2">
-                <input type="file" name="bukti[]" class="form-control" required />
+                <input type="file" name="bukti[]" class="form-control" accept="image/*,application/pdf,video/*" required />
             </div>
 
             <div class="col-md-1 mb-2 mt-1 d-flex align-items-start justify-content-end">
@@ -324,6 +344,25 @@
         }
       }
     });
+  </script>
+
+  <!-- Script untuk checkbox "Pilih Semua" di halaman kelola laporan admin -->
+  <script>
+    const selectAll = document.getElementById("selectAll");
+    const checkboxes = document.querySelectorAll(".rowCheckbox");
+
+    if (selectAll) {
+      selectAll.addEventListener("change", function() {
+        checkboxes.forEach(cb => cb.checked = this.checked);
+      });
+
+      checkboxes.forEach(cb => {
+        cb.addEventListener("change", () => {
+          const allChecked = [...checkboxes].every(c => c.checked);
+          selectAll.checked = allChecked;
+        });
+      });
+    }
   </script>
 
 </body>

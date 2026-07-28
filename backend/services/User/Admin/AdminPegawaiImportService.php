@@ -42,10 +42,9 @@ class AdminPegawaiImportService
             'nip'           => trim($row[1] ?? ''),
             'nik'           => trim($row[2] ?? ''),
             'jabatan'       => trim($row[3] ?? ''),
-            'jenis_kelamin' => trim($row[4] ?? ''),
+            'email'         => trim($row[4] ?? ''),
             'password'      => trim($row[5] ?? ''),
-            'email'         => trim($row[6] ?? ''),
-            'no_wa'         => trim($row[7] ?? ''),
+            'jenis_kelamin' => trim($row[6] ?? ''),
         ];
     }
 

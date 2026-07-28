@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../controllers/VerificationController.php';
 
 // Auth
 require_once __DIR__ . '/../controllers/AuthControllers/AuthController.php';

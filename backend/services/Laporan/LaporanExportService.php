@@ -11,7 +11,8 @@ class LaporanExportService
         ?int $pegawaiId,
         ?string $start,
         ?string $end,
-        string $adminName
+        string $adminName,
+        ?string $status = null
     ): array {
         // Simpan filter asli (untuk nama file)
         $rawStart = $start;
@@ -37,7 +38,8 @@ class LaporanExportService
         $data = $this->laporanQuery->getLaporanByAdmin(
             $pegawaiId,
             $start,
-            $end
+            $end,
+            $status
         );
 
         // Nama file excel
@@ -173,12 +175,17 @@ class LaporanExportService
 
         $pegawaiName = $pegawai['nama'];
 
-        // Ambil data laporan
+        // Ambil data laporan yang sudah diproses admin
         $data = $this->laporanQuery->getLaporanByPegawai(
             $pegawaiId,
             $start,
-            $end
+            $end,
+            true
         );
+
+        if (!$data) {
+            throw new Exception('Belum ada laporan yang diproses dan ditandatangani admin pada periode ini.');
+        }
 
         // Bangun nama file
         $filename = $this->buildExcelFileNamePegawai(

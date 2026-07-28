@@ -59,10 +59,6 @@ class LaporanHarianModel
         return (int) $this->db->lastInsertId();
     }
 
-    /**
-     * Digunakan jika suatu hari laporan harian perlu dihapus
-     * (misalnya cascading manual)
-     */
     public function delete(int $id): void
     {
         $stmt = $this->db->prepare("
@@ -71,6 +67,299 @@ class LaporanHarianModel
         ");
 
         $stmt->execute([':id' => $id]);
+    }
+
+    public function approveBulk(array $laporanIds, int $adminId, string $adminName, ?string $signatureNote = null): int
+    {
+        $laporanIds = array_values(array_unique(array_filter(array_map('intval', $laporanIds))));
+
+        if (!$laporanIds) {
+            return 0;
+        }
+
+        $updated = 0;
+
+        foreach ($laporanIds as $laporanId) {
+            $updated += $this->approveOnce($laporanId, $adminId, $signatureNote);
+        }
+
+        return $updated;
+    }
+
+    private function approveOnce(int $laporanId, int $adminId, ?string $signatureNote = null): int
+    {
+        $this->db->beginTransaction();
+
+        try {
+            $stmt = $this->db->prepare("
+                SELECT *
+                FROM {$this->table}
+                WHERE id = :id
+                FOR UPDATE
+            ");
+            $stmt->execute([':id' => $laporanId]);
+
+            $laporan = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$laporan) {
+                $this->db->rollBack();
+                return 0;
+            }
+
+            if (($laporan['approval_status'] ?? 'pending') === 'approved' && !empty($laporan['verification_token'])) {
+                $this->db->commit();
+                return 0;
+            }
+
+            $approvedAt = date('Y-m-d H:i:s');
+            $token = $this->generateUniqueVerificationToken();
+            $documentHash = $this->buildDocumentHash($laporanId, $approvedAt, $adminId);
+
+            $update = $this->db->prepare("
+                UPDATE {$this->table}
+                SET
+                    approval_status = 'approved',
+                    approved_by = :approved_by,
+                    approved_at = :approved_at,
+                    verification_token = :verification_token,
+                    document_hash = :document_hash,
+                    approval_revoked_at = NULL,
+                    signature_note = :signature_note,
+                    rejection_note = NULL
+                WHERE id = :id
+            ");
+
+            $update->execute([
+                ':approved_by'        => $adminId,
+                ':approved_at'        => $approvedAt,
+                ':verification_token' => $token,
+                ':document_hash'      => $documentHash,
+                ':signature_note'     => $signatureNote,
+                ':id'                 => $laporanId,
+            ]);
+
+            $this->db->commit();
+            return $update->rowCount();
+        } catch (Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+
+            throw $e;
+        }
+    }
+
+    public function rejectBulk(array $laporanIds, ?string $rejectionNote = null): int
+    {
+        $laporanIds = array_values(array_unique(array_filter(array_map('intval', $laporanIds))));
+
+        if (!$laporanIds) {
+            return 0;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($laporanIds), '?'));
+
+        $stmt = $this->db->prepare("
+            UPDATE {$this->table}
+            SET
+                approval_status = 'rejected',
+                approved_by = NULL,
+                approved_at = NULL,
+                verification_token = NULL,
+                document_hash = NULL,
+                approval_revoked_at = NULL,
+                signature_note = NULL,
+                rejection_note = ?
+            WHERE id IN ({$placeholders})
+        ");
+
+        $stmt->execute(array_merge([$rejectionNote], $laporanIds));
+
+        return $stmt->rowCount();
+    }
+
+    public function revokeApproval(int $laporanId): void
+    {
+        $stmt = $this->db->prepare("
+            UPDATE {$this->table}
+            SET
+                approval_status = 'pending',
+                approval_revoked_at = NOW()
+            WHERE id = :id AND approval_status = 'approved'
+        ");
+
+        $stmt->execute([':id' => $laporanId]);
+    }
+
+    public function markPending(int $laporanId): void
+    {
+        $stmt = $this->db->prepare("
+            UPDATE {$this->table}
+            SET
+                approval_status = 'pending',
+                approved_by = NULL,
+                approved_at = NULL,
+                verification_token = NULL,
+                document_hash = NULL,
+                approval_revoked_at = NULL,
+                signature_note = NULL,
+                rejection_note = NULL
+            WHERE id = :id AND approval_status <> 'approved'
+        ");
+
+        $stmt->execute([':id' => $laporanId]);
+    }
+
+    public function countByApprovalStatus(): array
+    {
+        $stmt = $this->db->prepare("
+            SELECT COALESCE(approval_status, 'pending') AS status, COUNT(*) AS total
+            FROM {$this->table}
+            GROUP BY COALESCE(approval_status, 'pending')
+        ");
+        $stmt->execute();
+
+        $counts = [
+            'pending' => 0,
+            'approved' => 0,
+            'rejected' => 0,
+        ];
+
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $status = $row['status'] ?? 'pending';
+            if (array_key_exists($status, $counts)) {
+                $counts[$status] = (int) $row['total'];
+            }
+        }
+
+        return $counts;
+    }
+    public function deleteBulk(array $laporanIds): int
+    {
+        $laporanIds = array_values(array_unique(array_filter(array_map('intval', $laporanIds))));
+
+        if (!$laporanIds) {
+            return 0;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($laporanIds), '?'));
+
+        $stmt = $this->db->prepare("
+            DELETE FROM {$this->table}
+            WHERE id IN ({$placeholders})
+        ");
+
+        $stmt->execute(array_merge([$rejectionNote], $laporanIds));
+
+        return $stmt->rowCount();
+    }
+
+    private function generateUniqueVerificationToken(): string
+    {
+        do {
+            $token = bin2hex(random_bytes(32));
+
+            $stmt = $this->db->prepare("
+                SELECT 1
+                FROM {$this->table}
+                WHERE verification_token = :token
+                LIMIT 1
+            ");
+            $stmt->execute([':token' => $token]);
+        } while ($stmt->fetchColumn());
+
+        return $token;
+    }
+
+    public function buildDocumentHash(int $laporanId, string $approvedAt, int $adminId): string
+    {
+        $data = $this->buildDocumentData($laporanId, $approvedAt, $adminId);
+
+        return hash('sha256', json_encode(
+            $data,
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+        ));
+    }
+
+    public function buildDocumentData(int $laporanId, string $approvedAt, int $adminId): array
+    {
+        $stmt = $this->db->prepare("
+            SELECT
+                lh.id AS laporan_id,
+                lh.tanggal,
+                lh.user_id AS pegawai_id,
+                u.nip,
+                u.nik,
+                u.nama AS nama_pegawai
+            FROM {$this->table} lh
+            JOIN user u ON u.id = lh.user_id
+            WHERE lh.id = :id
+            LIMIT 1
+        ");
+        $stmt->execute([':id' => $laporanId]);
+
+        $laporan = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$laporan) {
+            throw new Exception('Laporan tidak ditemukan.');
+        }
+
+        $kegiatanStmt = $this->db->prepare("
+            SELECT id, kegiatan, output
+            FROM laporan_kegiatan
+            WHERE laporan_id = :laporan_id
+            ORDER BY id ASC
+        ");
+        $kegiatanStmt->execute([':laporan_id' => $laporanId]);
+
+        $kegiatan = [];
+        foreach ($kegiatanStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $kegiatan[] = [
+                'id'       => (int) $row['id'],
+                'tanggal'  => $laporan['tanggal'],
+                'kegiatan' => (string) $row['kegiatan'],
+                'output'   => (string) $row['output'],
+            ];
+        }
+
+        return [
+            'laporan_id'       => (int) $laporan['laporan_id'],
+            'pegawai_id'       => (int) $laporan['pegawai_id'],
+            'nip'              => (string) ($laporan['nip'] ?? ''),
+            'nik'              => (string) ($laporan['nik'] ?? ''),
+            'tanggal'          => (string) $laporan['tanggal'],
+            'kegiatan'         => $kegiatan,
+            'approved_at'      => $approvedAt,
+            'approved_by'      => $adminId,
+        ];
+    }
+
+    public function findVerificationResultByToken(string $token): ?array
+    {
+        $stmt = $this->db->prepare("
+            SELECT
+                lh.id AS laporan_id,
+                lh.tanggal,
+                lh.approval_status,
+                lh.approved_by,
+                lh.approved_at,
+                lh.verification_token,
+                lh.document_hash,
+                lh.approval_revoked_at,
+                u.nama AS nama_pegawai,
+                u.nip,
+                u.nik,
+                admin.nama AS nama_admin
+            FROM {$this->table} lh
+            JOIN user u ON u.id = lh.user_id
+            LEFT JOIN user admin ON admin.id = lh.approved_by
+            WHERE lh.verification_token = :token
+            LIMIT 1
+        ");
+        $stmt->execute([':token' => $token]);
+
+        $data = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $data ?: null;
     }
 
     public function recalculateKegiatanCount(int $laporanId): int

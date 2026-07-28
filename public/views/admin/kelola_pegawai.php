@@ -1,4 +1,10 @@
 <?php ob_start(); ?>
+<?php
+$filter = $filter ?? [];
+$selectedKeyword = (string) ($filter['keyword'] ?? '');
+$selectedJabatan = (string) ($filter['jabatan'] ?? '');
+$selectedJenisKelamin = (string) ($filter['jenis_kelamin'] ?? '');
+?>
 
 <!-- Judul Halaman -->
 <h1 class="h4 mb-4 text-gray-800">Kelola Pegawai</h1>
@@ -7,39 +13,65 @@
 <div class="card shadow mb-4 border-left-success">
 
   <div class="card-header py-3">
-    <h6 class="m-0 font-weight-bold text-success">Cetak Data Pegawai</h6>
+    <h6 class="m-0 font-weight-bold text-success">Filter & Cetak Data Pegawai</h6>
   </div>
 
   <div class="card-body">
     <form class="form-row" method="GET">
-      <!-- <div class="col-md-9 mb-3">
-        <label class="small text-muted">Cetak Berdasarkan Kata Kunci Tertentu</label>
+      <div class="col-md-3 mb-3">
+        <label class="small text-muted">Kata Kunci</label>
         <input
           type="text"
           name="keyword"
           class="form-control"
-          placeholder="Cari Nama, NIP, Jabatan..." />
-      </div> -->
+          value="<?= htmlspecialchars($selectedKeyword) ?>"
+          placeholder="Cari nama, NIP, NIK, email, jabatan..." />
+      </div>
 
-      <!-- Tombol Cetak -->
-      <!-- <div class="col-md-3 mb-2 d-flex align-items-center justify-content-end"> -->
-      <div class="col-md-3 mb-2 d-flex">
-        <div>
-          <button
-            type="submit"
-            class="btn btn-danger mr-2"
-            formaction="pegawai/export/pdf"
-            formtarget="_blank">
-            <i class="fas fa-file-pdf"></i> PDF
-          </button>
+      <div class="col-md-3 mb-3">
+        <label class="small text-muted">Jabatan</label>
+        <select name="jabatan" class="form-control">
+          <option value="" <?= $selectedJabatan === '' ? 'selected' : '' ?>>Semua Jabatan</option>
+          <?php foreach (JabatanHelper::list() as $jabatan): ?>
+            <option value="<?= htmlspecialchars($jabatan) ?>" <?= $selectedJabatan === $jabatan ? 'selected' : '' ?>>
+              <?= htmlspecialchars($jabatan) ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+      </div>
 
-          <button
-            type="submit"
-            class="btn btn-madrasah"
-            formaction="pegawai/export/excel">
-            <i class="fas fa-file-excel"></i> Excel
-          </button>
-        </div>
+      <div class="col-md-3 mb-3">
+        <label class="small text-muted">Jenis Kelamin</label>
+        <select name="jenis_kelamin" class="form-control">
+          <option value="" <?= $selectedJenisKelamin === '' ? 'selected' : '' ?>>Semua</option>
+          <option value="Laki-laki" <?= $selectedJenisKelamin === 'Laki-laki' ? 'selected' : '' ?>>Laki-laki</option>
+          <option value="Perempuan" <?= $selectedJenisKelamin === 'Perempuan' ? 'selected' : '' ?>>Perempuan</option>
+          <option value="Tidak diketahui" <?= $selectedJenisKelamin === 'Tidak diketahui' ? 'selected' : '' ?>>Tidak diketahui</option>
+        </select>
+      </div>
+
+      <div class="col-md-3 mb-3 d-flex align-items-end justify-content-end">
+        <button type="submit" class="btn btn-info mr-2" style="min-width: 96px; white-space: nowrap;">
+          <i class="fas fa-filter"></i> Terapkan
+        </button>
+        <a href="/admin/kelola/pegawai" class="btn btn-secondary" style="min-width: 96px; white-space: nowrap;">Reset</a>
+      </div>
+
+      <div class="col-md-12 d-flex justify-content-end">
+        <button
+          type="submit"
+          class="btn btn-danger mr-2"
+          formaction="pegawai/export/pdf"
+          formtarget="_blank">
+          <i class="fas fa-file-pdf"></i> PDF
+        </button>
+
+        <button
+          type="submit"
+          class="btn btn-madrasah"
+          formaction="pegawai/export/excel">
+          <i class="fas fa-file-excel"></i> Excel
+        </button>
       </div>
     </form>
   </div>
@@ -260,7 +292,7 @@
 
                 <td class="text-center">
                   <img
-                    src="<?= $row['foto'] ? '/public/uploads/foto/' . $row['foto'] : '/public/assets/img/avatars/default_profile.svg' ?>"
+                    src="<?= !empty($row['foto']) && $row['foto'] !== 'default_profile.svg' ? '/public/uploads/foto/' . $row['foto'] : '/public/assets/img/avatars/default_profile.svg' ?>"
                     alt="Foto Profil Pegawai"
                     class="profile-img-mini mb-3" />
                 </td>

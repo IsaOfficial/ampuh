@@ -23,15 +23,30 @@ class AdminPegawaiExportController
         $this->authService->requireAdmin();
     }
 
+    private function buildFilter(): array
+    {
+        return [
+            'keyword' => trim($_GET['keyword'] ?? '') ?: null,
+            'jabatan' => trim($_GET['jabatan'] ?? '') ?: null,
+            'jenis_kelamin' => trim($_GET['jenis_kelamin'] ?? '') ?: null,
+        ];
+    }
+
     public function exportPdf(): void
     {
         $this->authorize();
 
-        $pegawai = $this->adminPegawaiService->getAll();
+        $filter = $this->buildFilter();
+        $pegawai = $this->adminPegawaiService->getAll(
+            $filter['keyword'],
+            $filter['jabatan'],
+            $filter['jenis_kelamin']
+        );
 
         view('admin/export/pegawai/pdf', [
             'pegawai' => $pegawai,
-            'title'   => 'Data Pegawai'
+            'title'   => 'Data Pegawai',
+            'filter'  => $filter
         ]);
         exit;
     }
@@ -40,7 +55,12 @@ class AdminPegawaiExportController
     {
         $this->authorize();
 
-        $pegawai = $this->adminPegawaiService->getAll();
+        $filter = $this->buildFilter();
+        $pegawai = $this->adminPegawaiService->getAll(
+            $filter['keyword'],
+            $filter['jabatan'],
+            $filter['jenis_kelamin']
+        );
 
         header('Content-Type: application/vnd.ms-excel');
         header('Content-Disposition: attachment; filename="data_pegawai.xls"');
@@ -49,7 +69,8 @@ class AdminPegawaiExportController
 
         view('admin/export/pegawai/excel', [
             'pegawai' => $pegawai,
-            'title'   => 'Data Pegawai'
+            'title'   => 'Data Pegawai',
+            'filter'  => $filter
         ]);
         exit;
     }
