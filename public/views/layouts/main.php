@@ -560,6 +560,7 @@
 
   <script src="/public/assets/js/demo/datatables-demo.js"></script>
   <script src="/public/assets/js/bulk-actions.js"></script>
+  <script src="/public/assets/js/avatar-fallback.js"></script>
 
   <!-- Chart.js -->
   <script src="/public/assets/vendor/chart.js/Chart.min.js"></script>
