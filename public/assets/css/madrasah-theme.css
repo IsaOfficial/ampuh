@@ -210,6 +210,35 @@
   box-shadow: 0 0 0 0.2rem rgba(28, 200, 138, 0.25) !important;
 }
 
+.datatable-responsive-shell {
+  overflow-x: visible;
+}
+
+.dataTables_wrapper {
+  width: 100%;
+}
+
+.dataTables_wrapper .dataTables_scroll {
+  width: 100%;
+}
+
+.dataTables_wrapper .dataTables_paginate {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.dataTables_wrapper .pagination {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 0.25rem;
+}
+
+.dataTables_wrapper .page-link {
+  min-width: 2.25rem;
+  text-align: center;
+}
+
 /* -----------------------------------------------------------
    Table Header Theme
    ----------------------------------------------------------- */
@@ -613,6 +642,39 @@
   .filter-card-export-actions {
     justify-content: flex-start;
     margin-left: 0;
+  }
+
+  .dataTables_wrapper .row {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .dataTables_wrapper .row > [class*="col-"] {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .dataTables_wrapper .dataTables_length,
+  .dataTables_wrapper .dataTables_filter,
+  .dataTables_wrapper .dataTables_info,
+  .dataTables_wrapper .dataTables_paginate {
+    text-align: left !important;
+  }
+
+  .dataTables_wrapper .dataTables_info {
+    white-space: normal;
+    font-size: 0.875rem;
+    padding-top: 0.75rem;
+  }
+
+  .dataTables_wrapper .dataTables_paginate {
+    margin-top: 0.75rem;
+  }
+
+  .dataTables_wrapper .page-link {
+    min-width: 2rem;
+    padding: 0.45rem 0.65rem;
+    font-size: 0.875rem;
   }
 }
 

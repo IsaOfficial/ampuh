@@ -5,6 +5,7 @@ APK WebView untuk aplikasi AMPUH production.
 - URL: `https://ampuh.mtsn1jepara.sch.id`
 - Nama aplikasi: `AMPUH`
 - Package: `ampuh.mtsn1jepara`
+- Version: `1.0.1` (`versionCode` 2)
 
 ## Build APK Debug
 
