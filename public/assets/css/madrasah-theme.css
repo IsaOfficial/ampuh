@@ -93,6 +93,22 @@
   min-width: 84px;
 }
 
+.trash-filter-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  flex-wrap: nowrap;
+}
+
+.trash-filter-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 92px;
+  height: calc(1.5em + 0.75rem + 2px);
+  white-space: nowrap;
+}
+
 .table-card-actions {
   display: flex;
   justify-content: flex-start;
@@ -219,8 +235,9 @@
   overflow: hidden;
 }
 
-.profile-summary {
+.profile-summary-card > .profile-summary {
   display: flex;
+  flex-direction: row !important;
   align-items: center;
   gap: 2.5rem;
   min-width: 0;
@@ -435,8 +452,8 @@
     display: block;
   }
 
-  .profile-summary {
-    flex-direction: column;
+  .profile-summary-card > .profile-summary {
+    flex-direction: column !important;
     align-items: center;
     gap: 1.25rem;
     padding: 1.25rem;
@@ -483,6 +500,14 @@
   .card-body {
     min-width: 0;
   }
+
+  .trash-filter-actions {
+    flex-wrap: wrap;
+  }
+
+  .trash-filter-actions .btn {
+    flex: 1 1 8rem;
+  }
 }
 
 @media (max-width: 420px) {
@@ -491,7 +516,7 @@
     padding-right: 0.75rem;
   }
 
-  .profile-summary {
+  .profile-summary-card > .profile-summary {
     padding: 1rem;
   }
 

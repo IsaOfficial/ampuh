@@ -33,7 +33,7 @@ $selectedEnd = (string) ($filter['end'] ?? '');
         <input type="date" name="end" class="form-control" value="<?= htmlspecialchars($selectedEnd) ?>">
       </div>
 
-      <div class="col-md-4 mb-3 d-flex align-items-end export-card-actions">
+      <div class="col-md-auto mb-3 trash-filter-actions">
         <button type="submit" class="btn btn-info">
           <i class="fas fa-filter"></i> Terapkan
         </button>

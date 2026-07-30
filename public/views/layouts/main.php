@@ -27,7 +27,7 @@
 
   <!-- SB Admin 2 -->
   <link rel="stylesheet" href="/public/assets/css/sb-admin-2.min.css">
-  <link rel="stylesheet" href="/public/assets/css/madrasah-theme.css">
+  <link rel="stylesheet" href="/public/assets/css/madrasah-theme.css?v=<?= filemtime(__DIR__ . '/../../assets/css/madrasah-theme.css') ?>">
 
 
   <!-- Datatables -->
