@@ -22,7 +22,7 @@ $selectedEnd = (string) ($filter['end'] ?? '');
   </div>
 
   <div class="card-body">
-    <form class="form-row" method="GET">
+    <form class="form-row filter-card-form" method="GET">
       <div class="col-md-4 mb-3">
         <label class="small text-muted">Tanggal Awal</label>
         <input type="date" name="start" class="form-control" value="<?= htmlspecialchars($selectedStart) ?>">
@@ -33,11 +33,15 @@ $selectedEnd = (string) ($filter['end'] ?? '');
         <input type="date" name="end" class="form-control" value="<?= htmlspecialchars($selectedEnd) ?>">
       </div>
 
-      <div class="col-md-auto mb-3 trash-filter-actions">
-        <button type="submit" class="btn btn-info">
-          <i class="fas fa-filter"></i> Terapkan
-        </button>
-        <a href="/pegawai/laporan/sampah" class="btn btn-secondary">Reset</a>
+      <div class="col-12">
+        <div class="filter-card-actions">
+          <div class="action-row action-row-start action-row-filter filter-card-primary-actions trash-filter-actions">
+            <button type="submit" class="btn btn-info">
+              <i class="fas fa-filter"></i> &nbsp Terapkan
+            </button>
+            <a href="/pegawai/laporan/sampah" class="btn btn-secondary">Reset</a>
+          </div>
+        </div>
       </div>
     </form>
   </div>
@@ -59,6 +63,7 @@ $selectedEnd = (string) ($filter['end'] ?? '');
       <table class="table table-bordered table-striped" id="dataTable" width="100%">
         <thead class="bg-warning text-white text-center">
           <tr>
+            <th width="30"><input type="checkbox" id="selectAllPegawaiTrash"> Pilih Semua</th>
             <th>No</th>
             <th>Hari & Tanggal</th>
             <th>Kegiatan</th>
@@ -80,6 +85,9 @@ $selectedEnd = (string) ($filter['end'] ?? '');
                 : null;
               ?>
               <tr>
+                <td class="text-center">
+                  <input type="checkbox" class="pegawaiTrashCheckbox" form="pegawaiTrashBulkForm" name="kegiatan_ids[]" value="<?= (int) $row['kegiatan_id'] ?>">
+                </td>
                 <td><?= $no++ ?></td>
                 <td><?= DateHelper::hariTanggalIndo($row['tanggal']); ?></td>
                 <td><?= htmlspecialchars($row['kegiatan']) ?></td>
@@ -115,14 +123,65 @@ $selectedEnd = (string) ($filter['end'] ?? '');
             <?php endforeach; ?>
           <?php else: ?>
             <tr>
-              <td colspan="7" class="text-center text-muted">Tidak ada laporan terhapus.</td>
+              <td colspan="8" class="text-center text-muted">Tidak ada laporan terhapus.</td>
             </tr>
           <?php endif; ?>
         </tbody>
       </table>
+
+      <form method="POST" action="/pegawai/laporan/bulk-process" id="pegawaiTrashBulkForm">
+        <?= Csrf::input() ?>
+        <div class="bulk-action-row mt-3">
+          <div class="bulk-action-field">
+            <label class="small text-muted">Aksi Kolektif</label>
+            <select name="action" id="pegawaiTrashBulkAction" class="form-control" required>
+              <option value="">-- Pilih Aksi --</option>
+              <option value="restore">Pulihkan</option>
+            </select>
+          </div>
+
+          <div class="bulk-action-submit">
+            <button type="submit" class="btn btn-warning">
+              <i class="fas fa-check-double"></i> &nbsp Jalankan
+            </button>
+          </div>
+        </div>
+      </form>
     </div>
   </div>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var bulkForm = document.getElementById('pegawaiTrashBulkForm');
+    var bulkSelection = window.AmpuhBulkActions ?
+      window.AmpuhBulkActions.bindVisibleSelectAll({
+        selectAllId: 'selectAllPegawaiTrash',
+        checkboxSelector: '.pegawaiTrashCheckbox'
+      }) :
+      null;
+
+    function selectedCount() {
+      return bulkSelection ? bulkSelection.selectedCount() : 0;
+    }
+
+    if (bulkForm) {
+      bulkForm.addEventListener('submit', function(event) {
+        var count = selectedCount();
+
+        if (!count) {
+          event.preventDefault();
+          alert('Pilih minimal satu kegiatan terlebih dahulu.');
+          return;
+        }
+
+        if (!confirm('Yakin ingin memulihkan ' + count + ' kegiatan yang dipilih?')) {
+          event.preventDefault();
+        }
+      });
+    }
+  });
+</script>
 
 <?php
 $content = ob_get_clean();

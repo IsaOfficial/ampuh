@@ -35,6 +35,7 @@ $router->group('/pegawai', function ($r) {
     $r->post('/laporan/update', [PegawaiLaporanController::class, 'update']);
     $r->post('/laporan/delete', [PegawaiLaporanController::class, 'delete']);
     $r->post('/laporan/restore', [PegawaiLaporanController::class, 'restore']);
+    $r->post('/laporan/bulk-process', [PegawaiLaporanController::class, 'bulkProcess']);
 
     // Export
     $r->get('/laporan/export/pdf', [PegawaiLaporanExportController::class, 'exportPdf']);
@@ -74,6 +75,9 @@ $router->group('/admin', function ($r) {
     $r->post('/kelola/pegawai/create', [AdminPegawaiController::class, 'create']);
     $r->post('/kelola/pegawai/update', [AdminPegawaiController::class, 'update']);
     $r->post('/kelola/pegawai/delete', [AdminPegawaiController::class, 'delete']);
+    $r->post('/kelola/pegawai/restore', [AdminPegawaiController::class, 'restore']);
+    $r->post('/kelola/pegawai/force-delete', [AdminPegawaiController::class, 'forceDelete']);
+    $r->post('/kelola/pegawai/bulk-process', [AdminPegawaiController::class, 'bulkProcess']);
 
     // Export Pegawai
     $r->get('/kelola/pegawai/export/pdf', [AdminPegawaiExportController::class, 'exportPdf']);

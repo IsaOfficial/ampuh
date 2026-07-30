@@ -1,20 +1,28 @@
 /* ===========================================================
    Madrasah Theme - Custom Style for SBAdmin2 + Bootstrap
-   Palette:
-   - Primary Madrasah Green: #2e8b57
-   - Darker Green (Hover/Active): #1f6b40
    =========================================================== */
+
+:root {
+  --madrasah-green: #2e8b57;
+  --madrasah-green-dark: #1f6b40;
+  --madrasah-green-soft: #e6f3ec;
+  --madrasah-green-focus: rgba(46, 139, 87, 0.25);
+  --madrasah-success: #1cc88a;
+  --madrasah-text-muted: #858796;
+  --madrasah-border: #d1d3e2;
+  --madrasah-action-gap: 0.5rem;
+}
 
 /* -----------------------------------------------------------
    Background Utilities
    ----------------------------------------------------------- */
 .bg-madrasah {
-  background-color: #2e8b57 !important;
+  background-color: var(--madrasah-green) !important;
   color: white !important;
 }
 
 .bg-madrasah-dark {
-  background-color: #1f6b40 !important;
+  background-color: var(--madrasah-green-dark) !important;
   color: white !important;
 }
 
@@ -22,54 +30,45 @@
    Text Utilities
    ----------------------------------------------------------- */
 .text-madrasah {
-  color: #2e8b57 !important;
+  color: var(--madrasah-green) !important;
 }
 
 .text-madrasah-dark {
-  color: #1f6b40 !important;
+  color: var(--madrasah-green-dark) !important;
 }
 
 /* -----------------------------------------------------------
    Border Utilities
    ----------------------------------------------------------- */
 .border-madrasah {
-  border-color: #2e8b57 !important;
+  border-color: var(--madrasah-green) !important;
 }
 
 /* -----------------------------------------------------------
    Buttons
    ----------------------------------------------------------- */
 .btn-madrasah {
-  background-color: #2e8b57 !important;
+  background-color: var(--madrasah-green) !important;
   color: white !important;
-  border-color: #2e8b57 !important;
+  border-color: var(--madrasah-green) !important;
 }
 
-.btn-madrasah:hover {
-  background-color: #1f6b40 !important;
-  color: white !important;
-  border-color: #1f6b40 !important;
-}
-
-/* Focus State */
+.btn-madrasah:hover,
 .btn-madrasah:focus,
-.btn-madrasah.focus {
-  background-color: #1f6b40 !important;
-  border-color: #1f6b40 !important;
-  color: white !important;
-  box-shadow: 0 0 0 0.2rem rgba(46, 139, 87, 0.25) !important;
-}
-
-/* Active / Pressed State */
+.btn-madrasah.focus,
 .btn-madrasah:active,
 .btn-madrasah.active,
 .show > .btn-madrasah.dropdown-toggle {
-  background-color: #1f6b40 !important;
-  border-color: #1f6b40 !important;
+  background-color: var(--madrasah-green-dark) !important;
+  border-color: var(--madrasah-green-dark) !important;
   color: white !important;
 }
 
-/* Disabled */
+.btn-madrasah:focus,
+.btn-madrasah.focus {
+  box-shadow: 0 0 0 0.2rem var(--madrasah-green-focus) !important;
+}
+
 .btn-madrasah.disabled,
 .btn-madrasah:disabled {
   background-color: #7ab79a !important;
@@ -77,48 +76,111 @@
   color: white !important;
 }
 
-.export-card-actions {
+.action-row,
+.trash-filter-actions {
   display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
+  align-items: center;
+  gap: var(--madrasah-action-gap);
   flex-wrap: wrap;
 }
 
-.export-card-actions .btn {
-  min-width: 96px;
-  white-space: nowrap;
-}
-
-.export-card-actions.export-card-actions-compact .btn {
-  min-width: 84px;
-}
-
-.trash-filter-actions {
-  display: flex;
-  align-items: flex-end;
-  gap: 0.5rem;
-  flex-wrap: nowrap;
-}
-
+.action-row .btn,
 .trash-filter-actions .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 92px;
-  height: calc(1.5em + 0.75rem + 2px);
   white-space: nowrap;
 }
 
-.table-card-actions {
-  display: flex;
+.action-row-end {
+  justify-content: flex-end;
+}
+
+.action-row-start {
   justify-content: flex-start;
+}
+
+.action-row-filter,
+.trash-filter-actions {
+  align-items: flex-end;
+}
+
+.action-row .btn {
+  min-width: 96px;
+}
+
+.action-row-compact .btn {
+  min-width: 84px;
+}
+
+.trash-filter-actions {
+  flex-wrap: nowrap;
+}
+
+.trash-filter-actions .btn {
+  min-width: 92px;
+  height: calc(1.5em + 0.75rem + 2px);
+}
+
+.filter-card-form {
+  row-gap: 0.25rem;
+}
+
+.filter-card-actions {
+  display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: flex-start;
+  gap: 0.75rem;
+  width: 100%;
+  margin-top: 0.25rem;
   flex-wrap: wrap;
 }
 
-.table-card-actions .btn {
-  white-space: nowrap;
+.filter-card-actions .action-row {
+  margin-bottom: 0;
+}
+
+.filter-card-actions .btn {
+  min-width: 104px;
+  height: calc(1.5em + 0.75rem + 2px);
+}
+
+.filter-card-primary-actions {
+  justify-content: flex-start;
+}
+
+.filter-card-export-actions {
+  justify-content: flex-start;
+  margin-left: 0;
+}
+
+.bulk-action-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.bulk-action-field {
+  flex: 0 1 340px;
+  max-width: 100%;
+}
+
+.bulk-action-field-wide {
+  flex-basis: 360px;
+}
+
+.bulk-action-submit {
+  flex: 0 0 auto;
+}
+
+.bulk-action-submit .btn {
+  min-width: 108px;
+  height: calc(1.5em + 0.75rem + 2px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* -----------------------------------------------------------
@@ -126,7 +188,7 @@
    ----------------------------------------------------------- */
 .form-control:focus,
 .custom-select:focus {
-  border-color: #1cc88a !important;
+  border-color: var(--madrasah-success) !important;
   box-shadow: 0 0 0 0.2rem rgba(28, 200, 138, 0.25) !important;
 }
 
@@ -134,17 +196,17 @@
    Pagination Color Override (Madrasah Theme)
    ----------------------------------------------------------- */
 .page-item.active .page-link {
-  background-color: #1cc88a !important;
-  border-color: #1cc88a !important;
+  background-color: var(--madrasah-success) !important;
+  border-color: var(--madrasah-success) !important;
   color: white !important;
 }
 
 .page-link {
-  color: #2e8b57 !important;
+  color: var(--madrasah-green) !important;
 }
 
 .page-link:hover {
-  color: #1f6b40 !important;
+  color: var(--madrasah-green-dark) !important;
   box-shadow: 0 0 0 0.2rem rgba(28, 200, 138, 0.25) !important;
 }
 
@@ -152,12 +214,12 @@
    Table Header Theme
    ----------------------------------------------------------- */
 .table-madrasah thead {
-  background-color: #2e8b57 !important;
+  background-color: var(--madrasah-green) !important;
   color: white !important;
 }
 
 .table-madrasah thead th {
-  border-color: #1f6b40 !important;
+  border-color: var(--madrasah-green-dark) !important;
 }
 
 /* Tambahan jika ingin hover row berwarna hijau lembut */
@@ -169,7 +231,7 @@
    Cards Border Accent
    ----------------------------------------------------------- */
 .border-left-madrasah {
-  border-left: 0.25rem solid #2e8b57 !important;
+  border-left: 0.25rem solid var(--madrasah-green) !important;
 }
 
 /* ==========================================================
@@ -180,12 +242,12 @@
   width: 45px;
   height: 45px;
   border-radius: 50% !important;
-  background-color: #e6f3ec; /* hijau sangat lembut */
-  border: 2px solid #2e8b57;
+  background-color: var(--madrasah-green-soft);
+  border: 2px solid var(--madrasah-green);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #2e8b57 !important;
+  color: var(--madrasah-green) !important;
   transition: all 0.25s ease-in-out;
   padding: 0;
 }
@@ -196,9 +258,9 @@
 
 /* Hover */
 .btn-toggle-madrasah:hover {
-  background-color: #2e8b57 !important;
+  background-color: var(--madrasah-green) !important;
   color: white !important;
-  border-color: #2e8b57 !important;
+  border-color: var(--madrasah-green) !important;
   text-decoration: none;
 }
 
@@ -210,8 +272,8 @@
 
 /* Active (ketika ditekan) */
 .btn-toggle-madrasah:active {
-  background-color: #1f6b40 !important;
-  border-color: #1f6b40 !important;
+  background-color: var(--madrasah-green-dark) !important;
+  border-color: var(--madrasah-green-dark) !important;
   color: white !important;
   text-decoration: none;
 }
@@ -221,14 +283,30 @@
   height: 150px;
   object-fit: cover;
   border-radius: 50%;
-  border: 4px solid #2e8b57; /* Tema madrasah */
+  border: 4px solid var(--madrasah-green);
 }
+
 .profile-img-mini {
   width: 50px;
   height: 50px;
   object-fit: cover;
   border-radius: 50%;
-  border: 2px solid #2e8b57; /* Tema madrasah */
+  border: 2px solid var(--madrasah-green);
+}
+
+.preview-foto {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border: 2px solid #ccc;
+}
+
+.table-avatar-cell {
+  width: 48px;
+}
+
+.dashboard-chart-pie {
+  height: 300px;
 }
 
 .profile-summary-card {
@@ -268,7 +346,7 @@
 .profile-summary-meta {
   display: flex;
   max-width: 100%;
-  color: #858796;
+  color: var(--madrasah-text-muted);
   font-size: 1rem;
   line-height: 1.45;
 }
@@ -295,12 +373,9 @@
 }
 
 .topbar-logo img {
+  height: 40px;
   max-width: min(62vw, 240px);
   object-fit: contain;
-}
-
-.position-relative {
-  position: relative;
 }
 
 .overlay-hover {
@@ -333,7 +408,7 @@
    Evidence Upload Input
    ----------------------------------------------------------- */
 .evidence-upload .custom-file-label {
-  border-color: #d1d3e2;
+  border-color: var(--madrasah-border);
   border-radius: 0.35rem;
   color: #6e707e;
   overflow: hidden;
@@ -343,15 +418,15 @@
 }
 
 .evidence-upload .custom-file-label::after {
-  background-color: #2e8b57;
-  border-color: #2e8b57;
+  background-color: var(--madrasah-green);
+  border-color: var(--madrasah-green);
   color: #fff;
   content: attr(data-browse);
   font-weight: 600;
 }
 
 .evidence-upload .custom-file-input:focus ~ .custom-file-label {
-  border-color: #2e8b57;
+  border-color: var(--madrasah-green);
   box-shadow: 0 0 0 0.2rem rgba(46, 139, 87, 0.18);
 }
 
@@ -364,7 +439,7 @@
   display: block;
   margin-top: 0.25rem;
   font-size: 0.72rem;
-  color: #858796;
+  color: var(--madrasah-text-muted);
 }
 
 @media (max-width: 767.98px) {
@@ -505,8 +580,24 @@
     flex-wrap: wrap;
   }
 
-  .trash-filter-actions .btn {
+  .trash-filter-actions .btn,
+  .filter-card-actions .btn {
     flex: 1 1 8rem;
+  }
+
+  .filter-card-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .filter-card-actions .action-row {
+    width: 100%;
+  }
+
+  .filter-card-primary-actions,
+  .filter-card-export-actions {
+    justify-content: flex-start;
+    margin-left: 0;
   }
 }
 

@@ -73,6 +73,7 @@ class AdminLaporanController
         $this->laporanService->purgeExpiredDeletedKegiatan();
 
         $pegawaiList = $this->pegawaiModel->getAllPegawai();
+        $deletedPegawai = $this->pegawaiModel->getDeletedPegawai();
         $filter = [
             'pegawai_id' => isset($_GET['pegawai_id']) && $_GET['pegawai_id'] !== '' ? (int) $_GET['pegawai_id'] : null,
             'start' => trim($_GET['start'] ?? '') ?: null,
@@ -87,11 +88,12 @@ class AdminLaporanController
             'deleted'
         );
 
-        view('admin/sampah_laporan', [
-            'title'        => 'Sampah Laporan',
-            'laporan'      => $laporan,
-            'pegawai_list' => $pegawaiList,
-            'filter'       => $filter
+        view('admin/sampah', [
+            'title'          => 'Sampah',
+            'laporan'        => $laporan,
+            'deletedPegawai' => $deletedPegawai,
+            'pegawai_list'   => $pegawaiList,
+            'filter'         => $filter
         ]);
     }
 

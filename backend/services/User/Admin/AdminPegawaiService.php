@@ -118,15 +118,42 @@ class AdminPegawaiService
 
     public function delete(int $id): void
     {
+        $this->deleteByAdmin($id, 0);
+    }
+
+    public function deleteByAdmin(int $id, int $adminId): void
+    {
         $pegawai = $this->pegawaiModel->findPegawaiById($id);
         if (!$pegawai) {
             throw new Exception("Pegawai tidak ditemukan.");
         }
 
-        // 1. Hapus record DB terlebih dahulu
-        $this->pegawaiModel->delete($id);
+        $this->pegawaiModel->softDelete($id, $adminId);
+    }
 
-        // 2. Cleanup file (best effort)
+    public function restore(int $id): void
+    {
+        $pegawai = $this->pegawaiModel->findPegawaiById($id, true);
+        if (!$pegawai || empty($pegawai['deleted_at'])) {
+            throw new Exception("Pegawai terhapus tidak ditemukan.");
+        }
+
+        $this->pegawaiModel->restore($id);
+    }
+
+    public function forceDelete(int $id): void
+    {
+        $pegawai = $this->pegawaiModel->findPegawaiById($id, true);
+        if (!$pegawai || empty($pegawai['deleted_at'])) {
+            throw new Exception("Pegawai terhapus tidak ditemukan.");
+        }
+
+        if ($this->pegawaiModel->countLaporanByPegawai($id) > 0) {
+            throw new Exception("Pegawai masih memiliki riwayat laporan sehingga tidak dapat dihapus permanen. Gunakan Restore jika data masih diperlukan.");
+        }
+
+        $this->pegawaiModel->forceDelete($id);
+
         if (
             !empty($pegawai['foto']) &&
             $pegawai['foto'] !== 'default_profile.svg'
@@ -137,6 +164,30 @@ class AdminPegawaiService
                 // optional: log error, jangan lempar ulang
             }
         }
+    }
+
+    public function bulkProcess(array $pegawaiIds, string $action, int $adminId): int
+    {
+        $pegawaiIds = array_values(array_unique(array_filter(array_map('intval', $pegawaiIds))));
+
+        if (!$pegawaiIds) {
+            throw new Exception("Pilih minimal satu pegawai.");
+        }
+
+        $processed = 0;
+
+        foreach ($pegawaiIds as $pegawaiId) {
+            match ($action) {
+                'delete' => $this->deleteByAdmin($pegawaiId, $adminId),
+                'restore' => $this->restore($pegawaiId),
+                'force_delete' => $this->forceDelete($pegawaiId),
+                default => throw new Exception("Aksi bulk pegawai tidak valid."),
+            };
+
+            $processed++;
+        }
+
+        return $processed;
     }
 
     public function getAll(?string $keyword = null, ?string $jabatan = null, ?string $jenisKelamin = null): array

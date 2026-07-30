@@ -17,7 +17,7 @@ $selectedJenisKelamin = (string) ($filter['jenis_kelamin'] ?? '');
   </div>
 
   <div class="card-body">
-    <form class="form-row" method="GET">
+    <form class="form-row filter-card-form" method="GET">
       <div class="col-md-3 mb-3">
         <label class="small text-muted">Kata Kunci</label>
         <input
@@ -50,30 +50,32 @@ $selectedJenisKelamin = (string) ($filter['jenis_kelamin'] ?? '');
         </select>
       </div>
 
-      <div class="col-md-3 mb-3 d-flex align-items-end justify-content-end">
-        <div class="export-card-actions">
-          <button type="submit" class="btn btn-info">
-            <i class="fas fa-filter"></i> Terapkan
-          </button>
-          <a href="/admin/kelola/pegawai" class="btn btn-secondary">Reset</a>
+      <div class="col-12">
+        <div class="filter-card-actions">
+          <div class="action-row action-row-start filter-card-primary-actions">
+            <button type="submit" class="btn btn-info">
+              <i class="fas fa-filter"></i> &nbsp Terapkan
+            </button>
+            <a href="/admin/kelola/pegawai" class="btn btn-secondary">Reset</a>
+          </div>
+
+          <div class="action-row action-row-end action-row-compact filter-card-export-actions">
+            <button
+              type="submit"
+              class="btn btn-danger"
+              formaction="pegawai/export/pdf"
+              formtarget="_blank">
+              <i class="fas fa-file-pdf"></i> &nbsp PDF
+            </button>
+
+            <button
+              type="submit"
+              class="btn btn-madrasah"
+              formaction="pegawai/export/excel">
+              <i class="fas fa-file-excel"></i> &nbsp Excel
+            </button>
+          </div>
         </div>
-      </div>
-
-      <div class="col-md-12 export-card-actions export-card-actions-compact">
-        <button
-          type="submit"
-          class="btn btn-danger"
-          formaction="pegawai/export/pdf"
-          formtarget="_blank">
-          <i class="fas fa-file-pdf"></i> PDF
-        </button>
-
-        <button
-          type="submit"
-          class="btn btn-madrasah"
-          formaction="pegawai/export/excel">
-          <i class="fas fa-file-excel"></i> Excel
-        </button>
       </div>
     </form>
   </div>
@@ -146,8 +148,7 @@ $selectedJenisKelamin = (string) ($filter['jenis_kelamin'] ?? '');
                   <img
                     src="/public/assets/img/avatars/default_profile.svg"
                     alt="Foto Profil"
-                    class="rounded-circle preview-foto"
-                    style="width:120px; height:120px; object-fit:cover; border:2px solid #ccc;">
+                    class="rounded-circle preview-foto">
 
                   <label class="overlay-hover">
                     <div class="overlay-text">
@@ -158,7 +159,7 @@ $selectedJenisKelamin = (string) ($filter['jenis_kelamin'] ?? '');
                       type="file"
                       name="foto"
                       accept="image/*"
-                      style="display:none;"
+                      class="d-none"
                       onchange="previewImage(this)">
                   </label>
 
@@ -258,12 +259,12 @@ $selectedJenisKelamin = (string) ($filter['jenis_kelamin'] ?? '');
   </div>
 
   <div class="card-body">
-    <div class="table-card-actions mb-3">
+    <div class="action-row action-row-start mb-3">
       <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#tambahPegawaiModal">
-        <i class="fas fa-plus-circle"></i> Tambah Pegawai
+        <i class="fas fa-plus-circle"></i> &nbsp Tambah Pegawai
       </button>
       <button class="btn btn-sm btn-madrasah" data-toggle="modal" data-target="#importPegawaiModal">
-        <i class="fas fa-plus-circle"></i> Import Data
+        <i class="fas fa-plus-circle"></i> &nbsp Import Data
       </button>
     </div>
 
@@ -274,6 +275,7 @@ $selectedJenisKelamin = (string) ($filter['jenis_kelamin'] ?? '');
         width="100%">
         <thead class="bg-success text-white text-center">
           <tr>
+            <th width="30"><input type="checkbox" id="selectAllPegawai"> Pilih Semua</th>
             <th>No</th>
             <th>Foto</th>
             <th>Nama Pegawai</th>
@@ -291,6 +293,9 @@ $selectedJenisKelamin = (string) ($filter['jenis_kelamin'] ?? '');
             <?php $no = 1;
             foreach ($pegawai as $row): ?>
               <tr>
+                <td class="text-center">
+                  <input type="checkbox" class="pegawaiCheckbox" form="pegawaiBulkForm" name="pegawai_ids[]" value="<?= (int) $row['id'] ?>">
+                </td>
                 <td><?= $no++; ?></td>
 
                 <td class="text-center">
@@ -353,8 +358,7 @@ $selectedJenisKelamin = (string) ($filter['jenis_kelamin'] ?? '');
                                           ? '/public/uploads/foto/' . $row['foto']
                                           : '/public/assets/img/avatars/default_profile.svg' ?>"
                                   alt="Foto Profil Pegawai"
-                                  class="rounded-circle preview-foto"
-                                  style="width:120px; height:120px; object-fit:cover; border:2px solid #ccc;">
+                                  class="rounded-circle preview-foto">
 
                                 <label class="overlay-hover">
                                   <div class="overlay-text">
@@ -365,7 +369,7 @@ $selectedJenisKelamin = (string) ($filter['jenis_kelamin'] ?? '');
                                     type="file"
                                     name="foto"
                                     accept="image/*"
-                                    style="display:none;"
+                                    class="d-none"
                                     onchange="previewImage(this)">
                                 </label>
 
@@ -509,9 +513,60 @@ $selectedJenisKelamin = (string) ($filter['jenis_kelamin'] ?? '');
         </tbody>
 
       </table>
+
+      <form method="POST" action="/admin/kelola/pegawai/bulk-process" id="pegawaiBulkForm">
+        <?= Csrf::input() ?>
+        <div class="bulk-action-row mt-3">
+          <div class="bulk-action-field">
+            <label class="small text-muted">Aksi Kolektif</label>
+            <select name="action" id="pegawaiBulkAction" class="form-control" required>
+              <option value="">-- Pilih Aksi --</option>
+              <option value="delete">Hapus</option>
+            </select>
+          </div>
+
+          <div class="bulk-action-submit">
+            <button type="submit" class="btn btn-danger">
+              <i class="fas fa-trash"></i> &nbsp Jalankan
+            </button>
+          </div>
+        </div>
+      </form>
     </div>
   </div>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var bulkForm = document.getElementById('pegawaiBulkForm');
+    var bulkSelection = window.AmpuhBulkActions
+      ? window.AmpuhBulkActions.bindVisibleSelectAll({
+        selectAllId: 'selectAllPegawai',
+        checkboxSelector: '.pegawaiCheckbox'
+      })
+      : null;
+
+    function selectedCount() {
+      return bulkSelection ? bulkSelection.selectedCount() : 0;
+    }
+
+    if (bulkForm) {
+      bulkForm.addEventListener('submit', function(event) {
+        var count = selectedCount();
+
+        if (!count) {
+          event.preventDefault();
+          alert('Pilih minimal satu pegawai terlebih dahulu.');
+          return;
+        }
+
+        if (!confirm('Yakin ingin memindahkan ' + count + ' pegawai yang dipilih ke Sampah?')) {
+          event.preventDefault();
+        }
+      });
+    }
+  });
+</script>
 
 <?php
 $content = ob_get_clean();

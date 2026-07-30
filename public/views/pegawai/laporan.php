@@ -16,10 +16,10 @@ $editableLimitDate = $today->modify('-3 days');
   </div>
 
   <div class="card-body">
-    <form class="form-row" method="GET" id="cetakForm">
+    <form class="form-row filter-card-form" method="GET" id="cetakForm">
 
       <!-- Tanggal Awal -->
-      <div class="col-md-4 mb-2">
+      <div class="col-md-4 mb-3">
         <label for="start_date" class="small text-muted">Tanggal Awal</label>
         <input
           type="date"
@@ -29,7 +29,7 @@ $editableLimitDate = $today->modify('-3 days');
       </div>
 
       <!-- Tanggal Akhir -->
-      <div class="col-md-4 mb-4">
+      <div class="col-md-4 mb-3">
         <label for="end_date" class="small text-muted">Tanggal Akhir</label>
         <input
           type="date"
@@ -38,27 +38,29 @@ $editableLimitDate = $today->modify('-3 days');
           class="form-control" />
       </div>
 
-      <div class="col-md-4 mb-2 d-flex align-items-end">
-        <div class="export-card-actions export-card-actions-compact w-100">
-          <button
-            type="submit"
-            class="btn btn-danger" <?= $hasApprovedReport ? '' : 'disabled' ?>
-            formaction="laporan/export/pdf"
-            formtarget="_blank">
-            <i class="fas fa-file-pdf"></i> PDF
-          </button>
+      <div class="col-12">
+        <div class="filter-card-actions">
+          <div class="action-row action-row-end action-row-compact filter-card-export-actions">
+            <button
+              type="submit"
+              class="btn btn-danger" <?= $hasApprovedReport ? '' : 'disabled' ?>
+              formaction="laporan/export/pdf"
+              formtarget="_blank">
+              <i class="fas fa-file-pdf"></i> &nbsp PDF
+            </button>
 
-          <button
-            type="submit"
-            class="btn btn-madrasah" <?= $hasApprovedReport ? '' : 'disabled' ?>
-            formaction="laporan/export/excel">
-            <i class="fas fa-file-excel"></i> Excel
-          </button>
+            <button
+              type="submit"
+              class="btn btn-madrasah" <?= $hasApprovedReport ? '' : 'disabled' ?>
+              formaction="laporan/export/excel">
+              <i class="fas fa-file-excel"></i> &nbsp Excel
+            </button>
+          </div>
         </div>
       </div>
 
       <?php if (!$hasApprovedReport): ?>
-        <div class="col-12">
+        <div class="col-12 mx-auto mt-3">
           <div class="alert alert-warning mb-0 py-2">
             Laporan baru bisa dicetak setelah admin menyetujui dan memberikan tanda tangan digital.
           </div>
@@ -82,9 +84,9 @@ $editableLimitDate = $today->modify('-3 days');
   </div>
 
   <div class="card-body">
-    <div class="table-card-actions mb-3">
+    <div class="action-row action-row-start mb-3">
       <a href="/pegawai/dashboard/#formInputLaporan" class="btn btn-primary btn-sm">
-        <i class="fas fa-plus"></i> Tambah Laporan
+        <i class="fas fa-plus-circle"></i> &nbsp Tambah Laporan
       </a>
     </div>
 
@@ -92,6 +94,7 @@ $editableLimitDate = $today->modify('-3 days');
       <table class="table table-bordered table-striped" id="dataTable">
         <thead class="bg-success text-white text-center">
           <tr>
+            <th width="30"><input type="checkbox" id="selectAllPegawaiLaporan"> Pilih Semua</th>
             <th>No</th>
             <th>Hari & Tanggal</th>
             <th>Kegiatan</th>
@@ -119,6 +122,9 @@ $editableLimitDate = $today->modify('-3 days');
                 : ((!$isApprovalRevoked && $isOutsideEditWindow) ? 'Batas edit maksimal 3 hari sebelumnya' : '');
               ?>
               <tr>
+                <td class="text-center">
+                  <input type="checkbox" class="pegawaiLaporanCheckbox" form="pegawaiLaporanBulkForm" name="kegiatan_ids[]" value="<?= (int) $row['kegiatan_id'] ?>">
+                </td>
                 <td class="text-center"><?= $no++ ?></td>
                 <td><?= DateHelper::hariTanggalIndo($row['tanggal']); ?></td>
 
@@ -289,15 +295,66 @@ $editableLimitDate = $today->modify('-3 days');
 
           <?php else: ?>
             <tr>
-              <td colspan="7" class="text-center text-muted">Belum ada laporan.</td>
+              <td colspan="8" class="text-center text-muted">Belum ada laporan.</td>
             </tr>
           <?php endif; ?>
 
         </tbody>
       </table>
+
+      <form method="POST" action="/pegawai/laporan/bulk-process" id="pegawaiLaporanBulkForm">
+        <?= Csrf::input() ?>
+        <div class="bulk-action-row mt-3">
+          <div class="bulk-action-field">
+            <label class="small text-muted">Aksi Kolektif</label>
+            <select name="action" id="pegawaiLaporanBulkAction" class="form-control" required>
+              <option value="">-- Pilih Aksi --</option>
+              <option value="delete">Hapus</option>
+            </select>
+          </div>
+
+          <div class="bulk-action-submit">
+            <button type="submit" class="btn btn-danger">
+              <i class="fas fa-trash"></i> &nbsp Jalankan
+            </button>
+          </div>
+        </div>
+      </form>
     </div>
   </div>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var bulkForm = document.getElementById('pegawaiLaporanBulkForm');
+    var bulkSelection = window.AmpuhBulkActions ?
+      window.AmpuhBulkActions.bindVisibleSelectAll({
+        selectAllId: 'selectAllPegawaiLaporan',
+        checkboxSelector: '.pegawaiLaporanCheckbox'
+      }) :
+      null;
+
+    function selectedCount() {
+      return bulkSelection ? bulkSelection.selectedCount() : 0;
+    }
+
+    if (bulkForm) {
+      bulkForm.addEventListener('submit', function(event) {
+        var count = selectedCount();
+
+        if (!count) {
+          event.preventDefault();
+          alert('Pilih minimal satu kegiatan terlebih dahulu.');
+          return;
+        }
+
+        if (!confirm('Yakin ingin menghapus ' + count + ' kegiatan yang dipilih?')) {
+          event.preventDefault();
+        }
+      });
+    }
+  });
+</script>
 
 <?php
 $content = ob_get_clean();

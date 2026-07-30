@@ -162,7 +162,7 @@ $statusBadge = static function (array $row): array {
         </h6>
       </div>
       <div class="card-body">
-        <div class="chart-pie pt-4" style="height: 300px">
+        <div class="chart-pie pt-4 dashboard-chart-pie">
           <canvas id="myPieChart"></canvas>
         </div>
       </div>
@@ -225,7 +225,7 @@ $statusBadge = static function (array $row): array {
             <?php else: ?>
               <?php foreach ($menungguDisetujui as $row): ?>
                 <tr>
-                  <td style="width: 48px">
+                  <td class="table-avatar-cell">
                     <img
                       src="<?= $row['foto']
                               ? '/public/uploads/foto/' . $row['foto']
@@ -276,7 +276,7 @@ $statusBadge = static function (array $row): array {
               <?php foreach ($laporanTerbaru as $row): ?>
                 <?php [$label, $badge] = $statusBadge($row); ?>
                 <tr>
-                  <td style="width: 48px">
+                  <td class="table-avatar-cell">
                     <img
                       src="<?= $row['foto']
                               ? '/public/uploads/foto/' . $row['foto']

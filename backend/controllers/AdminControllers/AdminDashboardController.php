@@ -64,7 +64,7 @@ class AdminDashboardController
         // TABLE DATA
         // =========================
         $laporanTerbaru       = $this->laporanHarianModel->latest(5);
-        $menungguDisetujui    = $this->laporanHarianModel->latestPendingKegiatan(5);
+        $menungguDisetujui    = $this->laporanHarianModel->latestPendingKegiatan(4);
         $tidakKirim           = $this->laporanHarianModel->belumKirimHariIni(5, $today);
 
         // =========================

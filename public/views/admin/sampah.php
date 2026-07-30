@@ -7,14 +7,14 @@ $selectedEnd = (string) ($filter['end'] ?? '');
 ?>
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-  <h1 class="h4 mb-0 text-gray-800">Sampah Laporan</h1>
-  <a href="/admin/kelola/laporan" class="btn btn-sm btn-secondary">
+  <h1 class="h4 mb-0 text-gray-800">Sampah</h1>
+  <!-- <a href="/admin/kelola/laporan" class="btn btn-sm btn-secondary">
     <i class="fas fa-arrow-left"></i> Kelola Laporan
-  </a>
+  </a> -->
 </div>
 
 <div class="alert alert-warning shadow-sm">
-  Laporan di halaman ini sudah dihapus sementara dan akan otomatis dihapus permanen setelah lebih dari 14 hari.
+  Laporan di halaman ini akan otomatis dihapus permanen setelah lebih dari 14 hari. Pegawai terhapus dapat dipulihkan, dan hanya dapat dihapus permanen jika belum memiliki riwayat laporan.
 </div>
 
 <div class="card shadow mb-4 border-left-warning">
@@ -23,7 +23,7 @@ $selectedEnd = (string) ($filter['end'] ?? '');
   </div>
 
   <div class="card-body">
-    <form class="form-row" method="GET">
+    <form class="form-row filter-card-form" method="GET">
       <div class="col-md-4 mb-3">
         <label class="small text-muted">Pegawai</label>
         <select name="pegawai_id" class="form-control">
@@ -46,11 +46,15 @@ $selectedEnd = (string) ($filter['end'] ?? '');
         <input type="date" name="end" class="form-control" value="<?= htmlspecialchars($selectedEnd) ?>">
       </div>
 
-      <div class="col-md-auto mb-3 trash-filter-actions">
-        <button type="submit" class="btn btn-info">
-          <i class="fas fa-filter"></i> Terapkan
-        </button>
-        <a href="/admin/kelola/laporan/sampah" class="btn btn-secondary">Reset</a>
+      <div class="col-12">
+        <div class="filter-card-actions">
+          <div class="action-row action-row-start action-row-filter filter-card-primary-actions trash-filter-actions">
+            <button type="submit" class="btn btn-info">
+              <i class="fas fa-filter"></i> &nbsp Terapkan
+            </button>
+            <a href="/admin/kelola/laporan/sampah" class="btn btn-secondary">Reset</a>
+          </div>
+        </div>
       </div>
     </form>
   </div>
@@ -184,8 +188,8 @@ $selectedEnd = (string) ($filter['end'] ?? '');
 
       <form method="POST" action="/admin/kelola/laporan/bulk-process" id="trashBulkForm">
         <?= Csrf::input() ?>
-        <div class="form-row align-items-end mt-3">
-          <div class="col-md-4 mb-2">
+        <div class="bulk-action-row mt-3">
+          <div class="bulk-action-field">
             <label class="small text-muted">Aksi Kolektif</label>
             <select name="action" id="bulkAction" class="form-control" required>
               <option value="">-- Pilih Aksi --</option>
@@ -194,9 +198,136 @@ $selectedEnd = (string) ($filter['end'] ?? '');
             </select>
           </div>
 
-          <div class="col-md-8 mb-2 text-right">
+          <div class="bulk-action-submit">
             <button type="submit" class="btn btn-warning">
-              <i class="fas fa-check-double"></i> Jalankan
+              <i class="fas fa-check-double"></i> &nbsp Jalankan
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow mb-4 border-left-warning">
+  <div class="card-header py-3">
+    <h6 class="m-0 font-weight-bold text-warning">Daftar Pegawai Terhapus</h6>
+  </div>
+
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped" width="100%">
+        <thead class="bg-warning text-white text-center">
+          <tr>
+            <th width="30"><input type="checkbox" id="selectAllDeletedPegawai"> Pilih Semua</th>
+            <th>No</th>
+            <th>Foto</th>
+            <th>Nama Pegawai</th>
+            <th>NIP/NIK</th>
+            <th>Jabatan</th>
+            <th>Dihapus</th>
+            <th width="110">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php if (!empty($deletedPegawai)): ?>
+            <?php $pegawaiNo = 1; ?>
+            <?php foreach ($deletedPegawai as $row): ?>
+              <?php $deletedAt = !empty($row['deleted_at']) ? new DateTimeImmutable($row['deleted_at']) : null; ?>
+              <tr>
+                <td class="text-center">
+                  <input type="checkbox" class="deletedPegawaiCheckbox" form="pegawaiTrashBulkForm" name="pegawai_ids[]" value="<?= (int) $row['id'] ?>">
+                </td>
+                <td><?= $pegawaiNo++ ?></td>
+                <td class="text-center">
+                  <img
+                    src="<?= !empty($row['foto']) && $row['foto'] !== 'default_profile.svg' ? '/public/uploads/foto/' . $row['foto'] : '/public/assets/img/avatars/default_profile.svg' ?>"
+                    alt="Foto Profil Pegawai"
+                    class="profile-img-mini mb-2" />
+                </td>
+                <td><?= htmlspecialchars($row['nama']) ?></td>
+                <td><?= htmlspecialchars(!empty($row['nip']) ? $row['nip'] : $row['nik']) ?></td>
+                <td><?= htmlspecialchars($row['jabatan']) ?></td>
+                <td class="text-center">
+                  <?php if ($deletedAt): ?>
+                    <span class="badge badge-dark">Terhapus</span><br>
+                    <small><?= $deletedAt->format('d/m/Y H:i') ?></small>
+                  <?php endif; ?>
+                  <?php if (!empty($row['deleted_by_name'])): ?>
+                    <br><small>Oleh: <?= htmlspecialchars($row['deleted_by_name']) ?></small>
+                  <?php endif; ?>
+                </td>
+                <td class="text-center">
+                  <div class="btn-group">
+                    <form method="POST" action="/admin/kelola/pegawai/restore" class="d-inline">
+                      <?= Csrf::input() ?>
+                      <input type="hidden" name="id" value="<?= (int) $row['id'] ?>">
+                      <button type="submit" class="btn btn-success btn-sm" title="Pulihkan pegawai">
+                        <i class="fas fa-trash-restore"></i>
+                      </button>
+                    </form>
+
+                    <button class="btn btn-danger btn-sm ml-1"
+                      data-toggle="modal"
+                      data-target="#forceDeletePegawaiModal-<?= (int) $row['id'] ?>"
+                      title="Hapus permanen">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+
+                  <div class="modal fade" id="forceDeletePegawaiModal-<?= (int) $row['id'] ?>" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                      <div class="modal-content">
+                        <div class="modal-header bg-danger">
+                          <h5 class="modal-title text-white">Hapus Permanen Pegawai</h5>
+                          <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                        </div>
+
+                        <form method="POST" action="/admin/kelola/pegawai/force-delete">
+                          <?= Csrf::input() ?>
+                          <div class="modal-body text-left">
+                            <input type="hidden" name="id" value="<?= (int) $row['id'] ?>">
+                            <p>
+                              Pegawai <strong><?= htmlspecialchars($row['nama']) ?></strong>
+                              akan dihapus permanen.
+                            </p>
+                            <p class="text-danger mb-0">Aksi ini tidak dapat dibatalkan dan hanya diproses jika pegawai belum memiliki riwayat laporan.</p>
+                          </div>
+
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-danger">Hapus Permanen</button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            <?php endforeach; ?>
+          <?php else: ?>
+            <tr>
+              <td colspan="8" class="text-center text-muted">Tidak ada pegawai terhapus.</td>
+            </tr>
+          <?php endif; ?>
+        </tbody>
+      </table>
+
+      <form method="POST" action="/admin/kelola/pegawai/bulk-process" id="pegawaiTrashBulkForm">
+        <?= Csrf::input() ?>
+        <div class="bulk-action-row mt-3">
+          <div class="bulk-action-field">
+            <label class="small text-muted">Aksi Kolektif Pegawai</label>
+            <select name="action" id="pegawaiTrashBulkAction" class="form-control" required>
+              <option value="">-- Pilih Aksi --</option>
+              <option value="restore">Pulihkan</option>
+              <option value="force_delete">Hapus Permanen</option>
+            </select>
+          </div>
+
+          <div class="bulk-action-submit">
+            <button type="submit" class="btn btn-warning">
+              <i class="fas fa-check-double"></i> &nbsp Jalankan
             </button>
           </div>
         </div>
@@ -207,27 +338,25 @@ $selectedEnd = (string) ($filter['end'] ?? '');
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    var selectAll = document.getElementById('selectAll');
-    var checkboxes = document.querySelectorAll('.rowCheckbox');
     var bulkForm = document.getElementById('trashBulkForm');
     var bulkAction = document.getElementById('bulkAction');
+    var pegawaiBulkForm = document.getElementById('pegawaiTrashBulkForm');
+    var pegawaiBulkAction = document.getElementById('pegawaiTrashBulkAction');
+    var bulkSelection = window.AmpuhBulkActions ?
+      window.AmpuhBulkActions.bindVisibleSelectAll({
+        selectAllId: 'selectAll',
+        checkboxSelector: '.rowCheckbox'
+      }) :
+      null;
+    var pegawaiBulkSelection = window.AmpuhBulkActions ?
+      window.AmpuhBulkActions.bindVisibleSelectAll({
+        selectAllId: 'selectAllDeletedPegawai',
+        checkboxSelector: '.deletedPegawaiCheckbox'
+      }) :
+      null;
 
     function selectedCount() {
-      var selected = {};
-      checkboxes.forEach(function(checkbox) {
-        if (checkbox.checked) {
-          selected[checkbox.value] = true;
-        }
-      });
-      return Object.keys(selected).length;
-    }
-
-    if (selectAll) {
-      selectAll.addEventListener('change', function() {
-        checkboxes.forEach(function(checkbox) {
-          checkbox.checked = selectAll.checked;
-        });
-      });
+      return bulkSelection ? bulkSelection.selectedCount() : 0;
     }
 
     if (bulkForm) {
@@ -246,6 +375,31 @@ $selectedEnd = (string) ($filter['end'] ?? '');
         }
 
         if (!confirm('Yakin ingin ' + (labels[action] || 'memproses') + ' ' + count + ' kegiatan yang dipilih?')) {
+          event.preventDefault();
+        }
+      });
+    }
+
+    function selectedPegawaiCount() {
+      return pegawaiBulkSelection ? pegawaiBulkSelection.selectedCount() : 0;
+    }
+
+    if (pegawaiBulkForm) {
+      pegawaiBulkForm.addEventListener('submit', function(event) {
+        var count = selectedPegawaiCount();
+        var action = pegawaiBulkAction ? pegawaiBulkAction.value : '';
+        var labels = {
+          restore: 'memulihkan',
+          force_delete: 'menghapus permanen'
+        };
+
+        if (!count) {
+          event.preventDefault();
+          alert('Pilih minimal satu pegawai terlebih dahulu.');
+          return;
+        }
+
+        if (!confirm('Yakin ingin ' + (labels[action] || 'memproses') + ' ' + count + ' pegawai yang dipilih?')) {
           event.preventDefault();
         }
       });

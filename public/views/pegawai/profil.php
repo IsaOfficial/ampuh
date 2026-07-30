@@ -29,7 +29,7 @@
             name="foto"
             id="fotoInput"
             accept="image/*"
-            style="display: none;"
+            class="d-none"
             onchange="document.getElementById('formFoto').submit();">
 
           <h4 class="text-gray-800 font-weight-bold">

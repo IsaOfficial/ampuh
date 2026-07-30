@@ -97,7 +97,7 @@
 
             <!-- Footer -->
             <div class="text-center small text-muted">
-              Copyright 2025 | MTsN 1 Jepara
+              &copy; 2026 MTs Negeri 1 Jepara
             </div>
 
           </div>

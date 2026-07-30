@@ -10,7 +10,7 @@ class PegawaiModel
     } /* ========================= * READ * ========================= */
     public function getAllPegawai(?string $keyword = null, ?string $jabatan = null, ?string $jenisKelamin = null): array
     {
-        $sql = "SELECT * FROM {$this->table} WHERE role = 'pegawai'";
+        $sql = "SELECT * FROM {$this->table} WHERE role = 'pegawai' AND deleted_at IS NULL";
         $conditions = [];
         $params = [];
 
@@ -40,15 +40,59 @@ class PegawaiModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function findPegawaiById(int $id): ?array
+    public function getDeletedPegawai(?string $keyword = null, ?string $jabatan = null, ?string $jenisKelamin = null): array
     {
-        $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE id = :id AND role = 'pegawai' LIMIT 1");
+        $sql = "
+            SELECT u.*, deleted_by_user.nama AS deleted_by_name
+            FROM {$this->table} u
+            LEFT JOIN {$this->table} deleted_by_user ON deleted_by_user.id = u.deleted_by
+            WHERE u.role = 'pegawai'
+              AND u.deleted_at IS NOT NULL
+        ";
+        $conditions = [];
+        $params = [];
+
+        if ($keyword !== null && trim($keyword) !== '') {
+            $conditions[] = "(u.nama LIKE :keyword OR u.nip LIKE :keyword OR u.nik LIKE :keyword OR u.jabatan LIKE :keyword OR u.email LIKE :keyword OR u.no_wa LIKE :keyword)";
+            $params[':keyword'] = '%' . trim($keyword) . '%';
+        }
+
+        if ($jabatan !== null && trim($jabatan) !== '') {
+            $conditions[] = "u.jabatan = :jabatan";
+            $params[':jabatan'] = trim($jabatan);
+        }
+
+        if ($jenisKelamin !== null && trim($jenisKelamin) !== '') {
+            $conditions[] = "u.jenis_kelamin = :jenis_kelamin";
+            $params[':jenis_kelamin'] = trim($jenisKelamin);
+        }
+
+        if ($conditions) {
+            $sql .= ' AND ' . implode(' AND ', $conditions);
+        }
+
+        $sql .= ' ORDER BY u.deleted_at DESC, u.nama ASC';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function findPegawaiById(int $id, bool $includeDeleted = false): ?array
+    {
+        $sql = "SELECT * FROM {$this->table} WHERE id = :id AND role = 'pegawai'";
+        if (!$includeDeleted) {
+            $sql .= " AND deleted_at IS NULL";
+        }
+        $sql .= " LIMIT 1";
+
+        $stmt = $this->db->prepare($sql);
         $stmt->execute([':id' => $id]);
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
     public function findPegawaiByIdentifier(string $value): ?array
     {
-        $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE role = 'pegawai' AND (nip = :nip OR nik = :nik) LIMIT 1");
+        $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE role = 'pegawai' AND deleted_at IS NULL AND (nip = :nip OR nik = :nik) LIMIT 1");
         $stmt->execute([':nip' => $value, ':nik' => $value,]);
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
@@ -124,6 +168,59 @@ class PegawaiModel
         $stmt->execute([':id' => $id]);
     }
 
+    public function softDelete(int $id, int $deletedBy, ?string $reason = null): bool
+    {
+        $stmt = $this->db->prepare("
+            UPDATE {$this->table}
+            SET deleted_at = NOW(),
+                deleted_by = :deleted_by,
+                delete_reason = :reason
+            WHERE id = :id
+              AND role = 'pegawai'
+              AND deleted_at IS NULL
+        ");
+
+        $stmt->execute([
+            ':id' => $id,
+            ':deleted_by' => $deletedBy,
+            ':reason' => $reason,
+        ]);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    public function restore(int $id): bool
+    {
+        $stmt = $this->db->prepare("
+            UPDATE {$this->table}
+            SET deleted_at = NULL,
+                deleted_by = NULL,
+                delete_reason = NULL
+            WHERE id = :id
+              AND role = 'pegawai'
+              AND deleted_at IS NOT NULL
+        ");
+
+        $stmt->execute([':id' => $id]);
+        return $stmt->rowCount() > 0;
+    }
+
+    public function forceDelete(int $id): void
+    {
+        $this->delete($id);
+    }
+
+    public function countLaporanByPegawai(int $id): int
+    {
+        $stmt = $this->db->prepare("
+            SELECT COUNT(*)
+            FROM laporan_harian
+            WHERE user_id = :id
+        ");
+        $stmt->execute([':id' => $id]);
+        return (int) $stmt->fetchColumn();
+    }
+
     /* =========================
  * DASHBOARD METHODS
  * ========================= */
@@ -137,6 +234,7 @@ class PegawaiModel
         SELECT COUNT(*) 
         FROM {$this->table}
         WHERE role = 'pegawai'
+          AND deleted_at IS NULL
     ");
         $stmt->execute();
         return (int) $stmt->fetchColumn();
@@ -152,6 +250,7 @@ class PegawaiModel
         SELECT jenis_kelamin, COUNT(*) total
         FROM {$this->table}
         WHERE role = 'pegawai'
+          AND deleted_at IS NULL
         GROUP BY jenis_kelamin
     ");
         $stmt->execute();

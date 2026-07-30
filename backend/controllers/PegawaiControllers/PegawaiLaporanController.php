@@ -56,7 +56,7 @@ class PegawaiLaporanController
             $filter['end']
         );
 
-        view('pegawai/sampah_laporan', [
+        view('pegawai/sampah', [
             'title' => 'Sampah Laporan',
             'laporan' => $laporan,
             'filter' => $filter,
@@ -193,6 +193,46 @@ class PegawaiLaporanController
         }
 
         header("Location: /pegawai/laporan/sampah");
+        exit;
+    }
+
+    public function bulkProcess(array $r): void
+    {
+        try {
+            $pegawai = $this->authService->pegawai();
+            $action = trim((string) ($r['action'] ?? ''));
+            $kegiatanIds = array_values(array_unique(array_filter(array_map('intval', (array) ($r['kegiatan_ids'] ?? [])))));
+
+            if (!$kegiatanIds) {
+                throw new Exception("Pilih minimal satu kegiatan.");
+            }
+
+            $processed = 0;
+            foreach ($kegiatanIds as $kegiatanId) {
+                match ($action) {
+                    'delete' => $this->laporanService->deleteKegiatanByPegawai((int) $pegawai['id'], $kegiatanId),
+                    'restore' => $this->laporanService->restoreKegiatanByPegawai((int) $pegawai['id'], $kegiatanId),
+                    default => throw new Exception("Aksi bulk tidak valid."),
+                };
+                $processed++;
+            }
+
+            Session::flash('flash', [
+                'type' => 'success',
+                'message' => "{$processed} kegiatan berhasil diproses."
+            ]);
+        } catch (Exception $e) {
+            Session::flash('flash', [
+                'type' => 'danger',
+                'message' => $e->getMessage()
+            ]);
+        }
+
+        $redirect = ($r['action'] ?? '') === 'restore'
+            ? '/pegawai/laporan/sampah'
+            : '/pegawai/laporan';
+
+        header("Location: {$redirect}");
         exit;
     }
 }

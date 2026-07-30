@@ -20,7 +20,7 @@ $oldCreateInput = Session::getFlash('old_admin_laporan_create') ?: [];
   </div>
 
   <div class="card-body">
-    <form class="form-row" method="GET">
+    <form class="form-row filter-card-form" method="GET">
       <div class="col-md-3 mb-3">
         <label class="small text-muted">Cetak Berdasarkan Pegawai</label>
         <select name="pegawai_id" class="form-control">
@@ -63,29 +63,32 @@ $oldCreateInput = Session::getFlash('old_admin_laporan_create') ?: [];
         </select>
       </div>
 
-      <div class="col-md-12 mb-3 export-card-actions">
-        <button type="submit" class="btn btn-info">
-          <i class="fas fa-filter"></i> Terapkan
-        </button>
+      <div class="col-12">
+        <div class="filter-card-actions">
+          <div class="action-row action-row-start filter-card-primary-actions">
+            <button type="submit" class="btn btn-info">
+              <i class="fas fa-filter"></i> &nbsp Terapkan
+            </button>
+            <a href="/admin/kelola/laporan" class="btn btn-secondary">Reset</a>
+          </div>
 
-        <a href="/admin/kelola/laporan" class="btn btn-secondary">Reset</a>
-      </div>
+          <div class="action-row action-row-end action-row-compact filter-card-export-actions">
+            <button
+              type="submit"
+              class="btn btn-danger"
+              formaction="laporan/export/pdf"
+              formtarget="_blank">
+              <i class="fas fa-file-pdf"></i> &nbsp PDF
+            </button>
 
-      <div class="col-md-12 export-card-actions export-card-actions-compact">
-        <button
-          type="submit"
-          class="btn btn-danger"
-          formaction="laporan/export/pdf"
-          formtarget="_blank">
-          <i class="fas fa-file-pdf"></i> PDF
-        </button>
-
-        <button
-          type="submit"
-          class="btn btn-madrasah"
-          formaction="laporan/export/excel">
-          <i class="fas fa-file-excel"></i> Excel
-        </button>
+            <button
+              type="submit"
+              class="btn btn-madrasah"
+              formaction="laporan/export/excel">
+              <i class="fas fa-file-excel"></i> &nbsp Excel
+            </button>
+          </div>
+        </div>
       </div>
     </form>
   </div>
@@ -191,9 +194,9 @@ $oldCreateInput = Session::getFlash('old_admin_laporan_create') ?: [];
   </div>
 
   <div class="card-body">
-    <div class="table-card-actions mb-3">
+    <div class="action-row action-row-start mb-3">
       <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#tambahLaporanModal">
-        <i class="fas fa-plus-circle"></i> Tambah Laporan
+        <i class="fas fa-plus-circle"></i> &nbsp Tambah Laporan
       </button>
     </div>
 
@@ -429,8 +432,8 @@ $oldCreateInput = Session::getFlash('old_admin_laporan_create') ?: [];
       </table>
       <form method="POST" action="/admin/kelola/laporan/bulk-process" id="bulkProcessForm">
         <?= Csrf::input() ?>
-        <div class="form-row align-items-end mt-3">
-          <div class="col-md-3 mb-2">
+        <div class="bulk-action-row mt-3">
+          <div class="bulk-action-field">
             <label class="small text-muted">Aksi Kolektif</label>
             <select name="action" id="bulkAction" class="form-control" required>
               <option value="">-- Pilih Aksi --</option>
@@ -441,19 +444,19 @@ $oldCreateInput = Session::getFlash('old_admin_laporan_create') ?: [];
             </select>
           </div>
 
-          <div class="col-md-4 mb-2" id="signatureNoteGroup">
+          <div class="bulk-action-field bulk-action-field-wide" id="signatureNoteGroup">
             <label class="small text-muted">Catatan Tanda Tangan Digital</label>
             <input type="text" name="signature_note" class="form-control" placeholder="Opsional, contoh: Diverifikasi oleh admin">
           </div>
 
-          <div class="col-md-4 mb-2 d-none" id="rejectionNoteGroup">
+          <div class="bulk-action-field bulk-action-field-wide d-none" id="rejectionNoteGroup">
             <label class="small text-muted">Alasan Penolakan</label>
             <input type="text" name="rejection_note" id="rejectionNote" class="form-control" placeholder="Wajib diisi saat menolak laporan">
           </div>
 
-          <div class="col-md-5 mb-2 text-right">
+          <div class="bulk-action-submit">
             <button type="submit" class="btn btn-primary">
-              <i class="fas fa-check-double"></i> Jalankan
+              <i class="fas fa-check-double"></i> &nbsp Jalankan
             </button>
           </div>
         </div>
@@ -464,22 +467,20 @@ $oldCreateInput = Session::getFlash('old_admin_laporan_create') ?: [];
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    var selectAll = document.getElementById('selectAll');
-    var checkboxes = document.querySelectorAll('.rowCheckbox');
     var bulkForm = document.getElementById('bulkProcessForm');
     var bulkAction = document.getElementById('bulkAction');
     var signatureNoteGroup = document.getElementById('signatureNoteGroup');
     var rejectionNoteGroup = document.getElementById('rejectionNoteGroup');
     var rejectionNote = document.getElementById('rejectionNote');
+    var bulkSelection = window.AmpuhBulkActions
+      ? window.AmpuhBulkActions.bindVisibleSelectAll({
+        selectAllId: 'selectAll',
+        checkboxSelector: '.rowCheckbox'
+      })
+      : null;
 
     function selectedCount() {
-      var selected = {};
-      checkboxes.forEach(function(checkbox) {
-        if (checkbox.checked) {
-          selected[checkbox.value] = true;
-        }
-      });
-      return Object.keys(selected).length;
+      return bulkSelection ? bulkSelection.selectedCount() : 0;
     }
 
     function syncBulkFields() {
@@ -491,14 +492,6 @@ $oldCreateInput = Session::getFlash('old_admin_laporan_create') ?: [];
       signatureNoteGroup.classList.toggle('d-none', action === 'reject' || action === 'revoke' || action === 'delete');
       rejectionNoteGroup.classList.toggle('d-none', action !== 'reject');
       rejectionNote.required = action === 'reject';
-    }
-
-    if (selectAll) {
-      selectAll.addEventListener('change', function() {
-        checkboxes.forEach(function(checkbox) {
-          checkbox.checked = selectAll.checked;
-        });
-      });
     }
 
     if (bulkAction) {

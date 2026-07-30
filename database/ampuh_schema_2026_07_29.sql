@@ -103,8 +103,13 @@ CREATE TABLE `user` (
   `role` enum('pegawai','admin') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'pegawai',
   `foto` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `deleted_at` datetime DEFAULT NULL,
+  `deleted_by` int(11) DEFAULT NULL,
+  `delete_reason` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `nik` (`nik`)
+  UNIQUE KEY `nik` (`nik`),
+  KEY `idx_user_deleted_at` (`deleted_at`),
+  KEY `idx_user_deleted_by` (`deleted_by`)
 ) ENGINE=InnoDB AUTO_INCREMENT=297 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

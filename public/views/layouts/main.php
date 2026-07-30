@@ -559,6 +559,7 @@
   <script src="/public/assets/vendor/datatables/dataTables.bootstrap4.min.js"></script>
 
   <script src="/public/assets/js/demo/datatables-demo.js"></script>
+  <script src="/public/assets/js/bulk-actions.js"></script>
 
   <!-- Chart.js -->
   <script src="/public/assets/vendor/chart.js/Chart.min.js"></script>
@@ -618,25 +619,6 @@
             }
           }
         }
-      });
-    }
-  </script>
-
-  <!-- Script untuk checkbox "Pilih Semua" di halaman kelola laporan admin -->
-  <script>
-    const selectAll = document.getElementById("selectAll");
-    const checkboxes = document.querySelectorAll(".rowCheckbox");
-
-    if (selectAll) {
-      selectAll.addEventListener("change", function() {
-        checkboxes.forEach(cb => cb.checked = this.checked);
-      });
-
-      checkboxes.forEach(cb => {
-        cb.addEventListener("change", () => {
-          const allChecked = [...checkboxes].every(c => c.checked);
-          selectAll.checked = allChecked;
-        });
       });
     }
   </script>

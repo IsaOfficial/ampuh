@@ -273,26 +273,29 @@ class LaporanHarianModel
         $stmt = $this->db->prepare("
             SELECT
                 SUM(CASE
-                    WHEN approval_revoked_at IS NOT NULL THEN 1
+                    WHEN lk.approval_revoked_at IS NOT NULL THEN 1
                     ELSE 0
                 END) AS revoked,
                 SUM(CASE
-                    WHEN approval_revoked_at IS NULL
-                     AND COALESCE(approval_status, 'pending') = 'pending' THEN 1
+                    WHEN lk.approval_revoked_at IS NULL
+                     AND COALESCE(lk.approval_status, 'pending') = 'pending' THEN 1
                     ELSE 0
                 END) AS pending,
                 SUM(CASE
-                    WHEN approval_revoked_at IS NULL
-                     AND approval_status = 'approved' THEN 1
+                    WHEN lk.approval_revoked_at IS NULL
+                     AND lk.approval_status = 'approved' THEN 1
                     ELSE 0
                 END) AS approved,
                 SUM(CASE
-                    WHEN approval_revoked_at IS NULL
-                     AND approval_status = 'rejected' THEN 1
+                    WHEN lk.approval_revoked_at IS NULL
+                     AND lk.approval_status = 'rejected' THEN 1
                     ELSE 0
                 END) AS rejected
-            FROM laporan_kegiatan
-            WHERE deleted_at IS NULL
+            FROM laporan_kegiatan lk
+            JOIN laporan_harian lh ON lh.id = lk.laporan_id
+            JOIN user u ON u.id = lh.user_id
+            WHERE lk.deleted_at IS NULL
+              AND u.deleted_at IS NULL
         ");
         $stmt->execute();
         $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
@@ -312,9 +315,11 @@ class LaporanHarianModel
         }
 
         $stmt = $this->db->prepare("
-            SELECT COUNT(DISTINCT user_id)
+            SELECT COUNT(DISTINCT lh.user_id)
             FROM {$this->table} lh
+            JOIN user u ON u.id = lh.user_id
             WHERE lh.tanggal = :tanggal
+              AND u.deleted_at IS NULL
               AND EXISTS (
                   SELECT 1
                   FROM laporan_kegiatan lk
@@ -547,7 +552,9 @@ class LaporanHarianModel
         SELECT COUNT(DISTINCT lh.id)
         FROM {$this->table} lh
         JOIN laporan_kegiatan lk ON lk.laporan_id = lh.id
+        JOIN user u ON u.id = lh.user_id
         WHERE lk.deleted_at IS NULL
+          AND u.deleted_at IS NULL
     ");
         $stmt->execute();
         return (int) $stmt->fetchColumn();
@@ -563,6 +570,7 @@ class LaporanHarianModel
         SELECT COUNT(*)
         FROM user u
         WHERE u.role = 'pegawai'
+        AND u.deleted_at IS NULL
         AND u.id NOT IN (
             SELECT lh.user_id
             FROM {$this->table} lh
@@ -587,8 +595,10 @@ class LaporanHarianModel
             COUNT(DISTINCT lh.id) AS total
         FROM {$this->table} lh
         JOIN laporan_kegiatan lk ON lk.laporan_id = lh.id
+        JOIN user u ON u.id = lh.user_id
         WHERE lh.tanggal >= CURDATE() - INTERVAL 29 DAY
           AND lk.deleted_at IS NULL
+          AND u.deleted_at IS NULL
         GROUP BY DATE(lh.tanggal)
         ORDER BY tgl ASC
     ");
@@ -624,6 +634,7 @@ class LaporanHarianModel
         JOIN {$this->table} lh ON lh.id = lk.laporan_id
         JOIN user u ON u.id = lh.user_id
         WHERE u.role = 'pegawai'
+          AND u.deleted_at IS NULL
           AND lk.deleted_at IS NULL
         ORDER BY lh.created_at DESC, lk.id DESC
         LIMIT :limit
@@ -649,6 +660,7 @@ class LaporanHarianModel
         JOIN {$this->table} lh ON lh.id = lk.laporan_id
         JOIN user u ON u.id = lh.user_id
         WHERE u.role = 'pegawai'
+          AND u.deleted_at IS NULL
           AND lk.approval_revoked_at IS NULL
           AND COALESCE(lk.approval_status, 'pending') = 'pending'
           AND lk.deleted_at IS NULL
@@ -672,6 +684,7 @@ class LaporanHarianModel
         SELECT u.id, u.nama, u.jabatan
         FROM user u
         WHERE u.role = 'pegawai'
+          AND u.deleted_at IS NULL
           AND NOT EXISTS (
               SELECT 1
               FROM laporan_harian today_lh

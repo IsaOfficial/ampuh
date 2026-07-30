@@ -15,8 +15,7 @@
   <!-- Logo -->
   <div class="topbar-logo mr-3">
     <img src="/public/assets/img/logo.png"
-      alt="Logo"
-      style="height: 40px;">
+      alt="Logo">
   </div>
 
 </nav>

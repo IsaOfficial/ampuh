@@ -114,11 +114,12 @@ class AdminPegawaiController
                 throw new Exception('ID pegawai tidak valid.');
             }
 
-            $this->adminPegawaiService->delete((int) $_POST['id']);
+            $admin = $this->authService->admin();
+            $this->adminPegawaiService->deleteByAdmin((int) $_POST['id'], (int) $admin['id']);
 
             Session::flash('flash', [
                 'type'    => 'success',
-                'message' => 'Pegawai berhasil dihapus.'
+                'message' => 'Pegawai dipindahkan ke Sampah.'
             ]);
         } catch (Throwable $e) {
             Session::flash('flash', [
@@ -128,6 +129,92 @@ class AdminPegawaiController
         }
 
         header('Location: /admin/kelola/pegawai');
+        exit;
+    }
+
+    public function restore(): void
+    {
+        $this->authorize();
+
+        try {
+            if (empty($_POST['id'])) {
+                throw new Exception('ID pegawai tidak valid.');
+            }
+
+            $this->adminPegawaiService->restore((int) $_POST['id']);
+
+            Session::flash('flash', [
+                'type'    => 'success',
+                'message' => 'Pegawai berhasil dipulihkan.'
+            ]);
+        } catch (Throwable $e) {
+            Session::flash('flash', [
+                'type'    => 'danger',
+                'message' => $e->getMessage()
+            ]);
+        }
+
+        header('Location: /admin/kelola/laporan/sampah');
+        exit;
+    }
+
+    public function forceDelete(): void
+    {
+        $this->authorize();
+
+        try {
+            if (empty($_POST['id'])) {
+                throw new Exception('ID pegawai tidak valid.');
+            }
+
+            $this->adminPegawaiService->forceDelete((int) $_POST['id']);
+
+            Session::flash('flash', [
+                'type'    => 'success',
+                'message' => 'Pegawai berhasil dihapus permanen.'
+            ]);
+        } catch (Throwable $e) {
+            Session::flash('flash', [
+                'type'    => 'danger',
+                'message' => $e->getMessage()
+            ]);
+        }
+
+        header('Location: /admin/kelola/laporan/sampah');
+        exit;
+    }
+
+    public function bulkProcess(): void
+    {
+        $this->authorize();
+
+        $action = trim($_POST['action'] ?? '');
+        $pegawaiIds = $_POST['pegawai_ids'] ?? [];
+
+        try {
+            $admin = $this->authService->admin();
+            $processed = $this->adminPegawaiService->bulkProcess(
+                (array) $pegawaiIds,
+                $action,
+                (int) $admin['id']
+            );
+
+            Session::flash('flash', [
+                'type' => 'success',
+                'message' => "{$processed} pegawai berhasil diproses."
+            ]);
+        } catch (Throwable $e) {
+            Session::flash('flash', [
+                'type' => 'danger',
+                'message' => $e->getMessage()
+            ]);
+        }
+
+        $redirect = in_array($action, ['restore', 'force_delete'], true)
+            ? '/admin/kelola/laporan/sampah'
+            : '/admin/kelola/pegawai';
+
+        header("Location: {$redirect}");
         exit;
     }
 }
