@@ -10,20 +10,29 @@ $oldCreateInput = Session::getFlash('old_pegawai_laporan_create') ?: [];
 <h1 class="h4 mb-4 text-gray-800">Dashboard Pegawai</h1>
 
 <!-- Card Info Pegawai -->
-<div class="card shadow mb-4 p-4">
-  <div class="d-flex align-items-center">
-    <img
-      src="<?= !empty($pegawai['foto']) && $pegawai['foto'] !== 'default_profile.svg' ? '/public/uploads/foto/' . $pegawai['foto'] : '/public/assets/img/avatars/default_profile.svg' ?>"
-      class="rounded-circle profile-img" />
+<div class="card shadow mb-4 profile-summary-card">
+  <div class="card-body profile-summary">
+    <div class="profile-summary-media">
+      <img
+        src="<?= !empty($pegawai['foto']) && $pegawai['foto'] !== 'default_profile.svg' ? '/public/uploads/foto/' . $pegawai['foto'] : '/public/assets/img/avatars/default_profile.svg' ?>"
+        class="profile-img profile-summary-img"
+        alt="Foto Profil Pegawai" />
+    </div>
 
-    <div class="ml-5">
-      <h2 class="mb-2 font-weight-bold text-madrasah text-uppercase">
+    <div class="profile-summary-content">
+      <h2 class="profile-summary-name mb-3 font-weight-bold text-madrasah text-uppercase">
         <?= htmlspecialchars($pegawai['nama']); ?>
       </h2>
-      <p class="mb-1">
-        <?= $pegawai['nip'] ? 'NIP : ' . htmlspecialchars($pegawai['nip']) : 'NIK : ' . htmlspecialchars($pegawai['nik']); ?></p>
-      <p class="mb-1">Jabatan : <?= htmlspecialchars($pegawai['jabatan']); ?></p>
-
+      <p class="profile-summary-meta mb-2">
+        <span class="profile-summary-label"><?= $pegawai['nip'] ? 'NIP' : 'NIK'; ?></span>
+        <span class="profile-summary-separator">:</span>
+        <span class="profile-summary-value"><?= htmlspecialchars($pegawai['nip'] ?: $pegawai['nik']); ?></span>
+      </p>
+      <p class="profile-summary-meta profile-summary-position mb-0">
+        <span class="profile-summary-label">Jabatan</span>
+        <span class="profile-summary-separator">:</span>
+        <span class="profile-summary-value"><?= htmlspecialchars($pegawai['jabatan']); ?></span>
+      </p>
     </div>
   </div>
 </div>

@@ -38,12 +38,11 @@ $editableLimitDate = $today->modify('-3 days');
           class="form-control" />
       </div>
 
-      <!-- Tombol Cetak -->
-      <div class="col-md-4 mb-2 d-flex align-items-center justify-content-end">
-        <div>
+      <div class="col-md-4 mb-2 d-flex align-items-end">
+        <div class="export-card-actions export-card-actions-compact w-100">
           <button
             type="submit"
-            class="btn btn-danger mr-2" <?= $hasApprovedReport ? '' : 'disabled' ?>
+            class="btn btn-danger" <?= $hasApprovedReport ? '' : 'disabled' ?>
             formaction="laporan/export/pdf"
             formtarget="_blank">
             <i class="fas fa-file-pdf"></i> PDF
@@ -78,16 +77,17 @@ $editableLimitDate = $today->modify('-3 days');
 
 <!-- Tabel -->
 <div class="card shadow mb-4 border-left-success">
-  <div
-    class="card-header py-3 d-flex justify-content-between align-items-center">
+  <div class="card-header py-3">
     <h6 class="m-0 font-weight-bold text-success">Riwayat Laporan Anda</h6>
-
-    <a href="/pegawai/dashboard/#formInputLaporan" class="btn btn-primary btn-sm">
-      <i class="fas fa-plus"></i> Tambah Laporan
-    </a>
   </div>
 
   <div class="card-body">
+    <div class="table-card-actions mb-3">
+      <a href="/pegawai/dashboard/#formInputLaporan" class="btn btn-primary btn-sm">
+        <i class="fas fa-plus"></i> Tambah Laporan
+      </a>
+    </div>
+
     <div class="table-responsive">
       <table class="table table-bordered table-striped" id="dataTable">
         <thead class="bg-success text-white text-center">
@@ -137,11 +137,11 @@ $editableLimitDate = $today->modify('-3 days');
 
                 <td class="text-center">
                   <?php if (!empty($row['approval_revoked_at'])): ?>
-                    <span class="badge badge-secondary">Pengesahan Dicabut</span><br>
-                    <small>Dapat diperbaiki sampai disahkan kembali</small>
+                    <span class="badge badge-secondary">Persetujuan Dicabut</span><br>
+                    <small>Dapat diperbaiki kembali</small>
                   <?php elseif (($row['status'] ?? 'pending') === 'approved'): ?>
                     <span class="badge badge-success">Siap Cetak</span><br>
-                    <small>Ditandatangani admin</small>
+                    <small>Disetujui</small>
                   <?php elseif (($row['status'] ?? 'pending') === 'rejected'): ?>
                     <span class="badge badge-danger">Ditolak</span>
                     <?php if (!empty($row['rejection_note'])): ?>

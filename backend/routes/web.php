@@ -30,9 +30,11 @@ $router->group('/pegawai', function ($r) {
 
     // Laporan
     $r->get('/laporan', [PegawaiLaporanController::class, 'riwayatLaporan']);
+    $r->get('/laporan/sampah', [PegawaiLaporanController::class, 'sampahLaporan']);
     $r->post('/laporan/store', [PegawaiLaporanController::class, 'create']);
     $r->post('/laporan/update', [PegawaiLaporanController::class, 'update']);
     $r->post('/laporan/delete', [PegawaiLaporanController::class, 'delete']);
+    $r->post('/laporan/restore', [PegawaiLaporanController::class, 'restore']);
 
     // Export
     $r->get('/laporan/export/pdf', [PegawaiLaporanExportController::class, 'exportPdf']);
@@ -55,9 +57,12 @@ $router->group('/admin', function ($r) {
 
     // Kelola Laporan
     $r->get('/kelola/laporan', [AdminLaporanController::class, 'kelolaLaporan']);
+    $r->get('/kelola/laporan/sampah', [AdminLaporanController::class, 'sampahLaporan']);
     $r->post('/kelola/laporan/create', [AdminLaporanController::class, 'create']);
     $r->post('/kelola/laporan/update', [AdminLaporanController::class, 'update']);
     $r->post('/kelola/laporan/delete', [AdminLaporanController::class, 'delete']);
+    $r->post('/kelola/laporan/restore', [AdminLaporanController::class, 'restore']);
+    $r->post('/kelola/laporan/force-delete', [AdminLaporanController::class, 'forceDelete']);
     $r->post('/kelola/laporan/bulk-process', [AdminLaporanController::class, 'bulkProcess']);
 
     // Export Laporan

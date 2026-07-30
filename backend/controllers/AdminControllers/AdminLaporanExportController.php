@@ -25,13 +25,18 @@ class AdminLaporanExportController
 
     private function buildFilter(): array
     {
+        $status = trim($_GET['status'] ?? '') ?: null;
+        if ($status === 'deleted') {
+            throw new Exception('Laporan terhapus tidak dapat diekspor.');
+        }
+
         return [
             'pegawai_id' => isset($_GET['pegawai_id']) && $_GET['pegawai_id'] !== ''
                 ? (int) $_GET['pegawai_id']
                 : null,
             'start' => trim($_GET['start'] ?? '') ?: null,
             'end'   => trim($_GET['end'] ?? '') ?: null,
-            'status' => trim($_GET['status'] ?? '') ?: null,
+            'status' => $status,
         ];
     }
 
@@ -74,7 +79,7 @@ class AdminLaporanExportController
                 'message' => $e->getMessage()
             ]);
 
-            header('Location: /admin/kelola-laporan');
+            header('Location: /admin/kelola/laporan');
             exit;
         }
     }
@@ -113,7 +118,7 @@ class AdminLaporanExportController
                 'message' => $e->getMessage()
             ]);
 
-            header('Location: /admin/kelola-laporan');
+            header('Location: /admin/kelola/laporan');
             exit;
         }
     }

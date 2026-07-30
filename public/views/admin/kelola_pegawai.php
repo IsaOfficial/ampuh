@@ -51,16 +51,18 @@ $selectedJenisKelamin = (string) ($filter['jenis_kelamin'] ?? '');
       </div>
 
       <div class="col-md-3 mb-3 d-flex align-items-end justify-content-end">
-        <button type="submit" class="btn btn-info mr-2" style="min-width: 96px; white-space: nowrap;">
-          <i class="fas fa-filter"></i> Terapkan
-        </button>
-        <a href="/admin/kelola/pegawai" class="btn btn-secondary" style="min-width: 96px; white-space: nowrap;">Reset</a>
+        <div class="export-card-actions">
+          <button type="submit" class="btn btn-info">
+            <i class="fas fa-filter"></i> Terapkan
+          </button>
+          <a href="/admin/kelola/pegawai" class="btn btn-secondary">Reset</a>
+        </div>
       </div>
 
-      <div class="col-md-12 d-flex justify-content-end">
+      <div class="col-md-12 export-card-actions export-card-actions-compact">
         <button
           type="submit"
-          class="btn btn-danger mr-2"
+          class="btn btn-danger"
           formaction="pegawai/export/pdf"
           formtarget="_blank">
           <i class="fas fa-file-pdf"></i> PDF
@@ -85,20 +87,12 @@ $selectedJenisKelamin = (string) ($filter['jenis_kelamin'] ?? '');
 
 <!-- Tabel -->
 <div class="card shadow mb-4 border-left-success">
-  <div
-    class="card-header py-3 d-flex justify-content-between align-items-center">
+  <div class="card-header py-3">
     <h6 class="m-0 font-weight-bold text-success">
       Daftar Pegawai
     </h6>
 
     <div class="row-md-2 justify-content-right">
-      <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#tambahPegawaiModal">
-        <i class="fas fa-plus-circle"></i> Tambah Pegawai
-      </button>
-      <button class="btn btn-sm btn-madrasah" data-toggle="modal" data-target="#importPegawaiModal">
-        <i class="fas fa-plus-circle"></i> Import Data
-      </button>
-
       <!-- Modal Import CSV -->
       <div class="modal fade" id="importPegawaiModal" tabindex="-1" role="dialog">
         <div class="modal-dialog" role="document">
@@ -264,6 +258,15 @@ $selectedJenisKelamin = (string) ($filter['jenis_kelamin'] ?? '');
   </div>
 
   <div class="card-body">
+    <div class="table-card-actions mb-3">
+      <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#tambahPegawaiModal">
+        <i class="fas fa-plus-circle"></i> Tambah Pegawai
+      </button>
+      <button class="btn btn-sm btn-madrasah" data-toggle="modal" data-target="#importPegawaiModal">
+        <i class="fas fa-plus-circle"></i> Import Data
+      </button>
+    </div>
+
     <div class="table-responsive">
       <table
         class="table table-bordered table-striped"

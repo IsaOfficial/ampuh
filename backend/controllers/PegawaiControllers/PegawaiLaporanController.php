@@ -29,6 +29,7 @@ class PegawaiLaporanController
     public function riwayatLaporan(): void
     {
         $pegawai = $this->authService->pegawai();
+        $this->laporanService->purgeExpiredDeletedKegiatan();
 
         $laporan = $this->laporanQuery
             ->getLaporanByPegawai($pegawai['id']);
@@ -36,6 +37,29 @@ class PegawaiLaporanController
         view('pegawai/laporan', [
             'title'   => 'Riwayat Laporan',
             'laporan' => $laporan
+        ]);
+    }
+
+    public function sampahLaporan(): void
+    {
+        $pegawai = $this->authService->pegawai();
+        $this->laporanService->purgeExpiredDeletedKegiatan();
+
+        $filter = [
+            'start' => trim($_GET['start'] ?? '') ?: null,
+            'end' => trim($_GET['end'] ?? '') ?: null,
+        ];
+
+        $laporan = $this->laporanQuery->getDeletedLaporanByPegawai(
+            (int) $pegawai['id'],
+            $filter['start'],
+            $filter['end']
+        );
+
+        view('pegawai/sampah_laporan', [
+            'title' => 'Sampah Laporan',
+            'laporan' => $laporan,
+            'filter' => $filter,
         ]);
     }
 
@@ -129,7 +153,7 @@ class PegawaiLaporanController
 
             Session::flash('flash', [
                 'type' => 'success',
-                'message' => 'Laporan berhasil dihapus.'
+                'message' => 'Laporan berhasil dihapus dan masih dapat dipulihkan selama 14 hari.'
             ]);
         } catch (Exception $e) {
 
@@ -140,6 +164,35 @@ class PegawaiLaporanController
         }
 
         header("Location: /pegawai/laporan");
+        exit;
+    }
+
+    public function restore(array $r): void
+    {
+        try {
+            $pegawai = $this->authService->pegawai();
+
+            if (empty($r['id'])) {
+                throw new Exception("ID kegiatan tidak valid.");
+            }
+
+            $this->laporanService->restoreKegiatanByPegawai(
+                (int) $pegawai['id'],
+                (int) $r['id']
+            );
+
+            Session::flash('flash', [
+                'type' => 'success',
+                'message' => 'Laporan berhasil dipulihkan.'
+            ]);
+        } catch (Exception $e) {
+            Session::flash('flash', [
+                'type' => 'danger',
+                'message' => $e->getMessage()
+            ]);
+        }
+
+        header("Location: /pegawai/laporan/sampah");
         exit;
     }
 }

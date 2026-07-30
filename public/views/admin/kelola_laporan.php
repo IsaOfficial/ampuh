@@ -56,36 +56,36 @@ $oldCreateInput = Session::getFlash('old_admin_laporan_create') ?: [];
         <label class="small text-muted">Status Laporan</label>
         <select name="status" class="form-control">
           <option value="" <?= $selectedStatus === '' ? 'selected' : '' ?>>Semua Status</option>
-          <option value="pending" <?= $selectedStatus === 'pending' ? 'selected' : '' ?>>Menunggu</option>
+          <option value="pending" <?= $selectedStatus === 'pending' ? 'selected' : '' ?>>Menunggu Disetujui</option>
           <option value="approved" <?= $selectedStatus === 'approved' ? 'selected' : '' ?>>Disahkan</option>
           <option value="rejected" <?= $selectedStatus === 'rejected' ? 'selected' : '' ?>>Ditolak</option>
+          <option value="revoked" <?= $selectedStatus === 'revoked' ? 'selected' : '' ?>>Dicabut</option>
         </select>
       </div>
 
-      <!-- Tombol Cetak -->
-      <div class="col-md-12 mb-3 d-flex align-items-end justify-content-end">
-        <div>
-          <button type="submit" class="btn btn-info mr-2" style="min-width: 96px; white-space: nowrap;">
-            <i class="fas fa-filter"></i> Terapkan
-          </button>
+      <div class="col-md-12 mb-3 export-card-actions">
+        <button type="submit" class="btn btn-info">
+          <i class="fas fa-filter"></i> Terapkan
+        </button>
 
-          <a href="/admin/kelola/laporan" class="btn btn-secondary mr-2" style="min-width: 96px; white-space: nowrap;">Reset</a>
+        <a href="/admin/kelola/laporan" class="btn btn-secondary">Reset</a>
+      </div>
 
-          <button
-            type="submit"
-            class="btn btn-danger mr-2"
-            formaction="laporan/export/pdf"
-            formtarget="_blank">
-            <i class="fas fa-file-pdf"></i> PDF
-          </button>
+      <div class="col-md-12 export-card-actions export-card-actions-compact">
+        <button
+          type="submit"
+          class="btn btn-danger"
+          formaction="laporan/export/pdf"
+          formtarget="_blank">
+          <i class="fas fa-file-pdf"></i> PDF
+        </button>
 
-          <button
-            type="submit"
-            class="btn btn-madrasah"
-            formaction="laporan/export/excel">
-            <i class="fas fa-file-excel"></i> Excel
-          </button>
-        </div>
+        <button
+          type="submit"
+          class="btn btn-madrasah"
+          formaction="laporan/export/excel">
+          <i class="fas fa-file-excel"></i> Excel
+        </button>
       </div>
     </form>
   </div>
@@ -100,14 +100,8 @@ $oldCreateInput = Session::getFlash('old_admin_laporan_create') ?: [];
 
 <!-- Tabel -->
 <div class="card shadow mb-4 border-left-success">
-  <div
-    class="card-header py-3 d-flex justify-content-between align-items-center">
+  <div class="card-header py-3">
     <h6 class="m-0 font-weight-bold text-success">Daftar Laporan</h6>
-
-    <!-- BUTTON TAMBAH LAPORAN -->
-    <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#tambahLaporanModal">
-      <i class="fas fa-plus-circle"></i> Tambah Laporan
-    </button>
 
     <!-- MODAL TAMBAH LAPORAN -->
     <div class="modal fade" id="tambahLaporanModal" tabindex="-1" aria-hidden="true">
@@ -197,6 +191,12 @@ $oldCreateInput = Session::getFlash('old_admin_laporan_create') ?: [];
   </div>
 
   <div class="card-body">
+    <div class="table-card-actions mb-3">
+      <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#tambahLaporanModal">
+        <i class="fas fa-plus-circle"></i> Tambah Laporan
+      </button>
+    </div>
+
     <div class="table-responsive">
       <div class="alert alert-info py-2 small">Aksi kolektif berlaku per kegiatan. Setiap baris kegiatan dapat diproses sendiri-sendiri.</div>
 
@@ -226,6 +226,11 @@ $oldCreateInput = Session::getFlash('old_admin_laporan_create') ?: [];
           <?php if (!empty($laporan)): ?>
             <?php $no = 1;
             foreach ($laporan as $row): ?>
+              <?php
+              $isApprovedActive = empty($row['deleted_at'])
+                && empty($row['approval_revoked_at'])
+                && (($row['status'] ?? 'pending') === 'approved');
+              ?>
               <tr>
                 <td class="text-center"><input type="checkbox" class="rowCheckbox" form="bulkProcessForm" name="kegiatan_ids[]" value="<?= (int) $row['kegiatan_id'] ?>"></td>
                 <td><?= $no++ ?></td>
@@ -254,13 +259,12 @@ $oldCreateInput = Session::getFlash('old_admin_laporan_create') ?: [];
 
                 <td class="text-center">
                   <?php if (!empty($row['approval_revoked_at'])): ?>
-                    <span class="badge badge-secondary">Pengesahan Dicabut</span><br>
+                    <span class="badge badge-secondary">Persetujuan Dicabut</span><br>
                     <?php if (!empty($row['verification_token'])): ?>
                       <small>Kode lama: <?= htmlspecialchars(substr($row['verification_token'], 0, 12)) ?></small>
                     <?php endif; ?>
                   <?php elseif (($row['status'] ?? 'pending') === 'approved'): ?>
-                    <span class="badge badge-success">Ditandatangani</span><br>
-                    <small><?= htmlspecialchars($row['signed_name'] ?? '-') ?></small>
+                    <span class="badge badge-success">Disetujui</span><br>
                     <?php if (!empty($row['verification_token'])): ?>
                       <br><small>Kode: <?= htmlspecialchars(substr($row['verification_token'], 0, 12)) ?></small>
                     <?php endif; ?>
@@ -285,11 +289,17 @@ $oldCreateInput = Session::getFlash('old_admin_laporan_create') ?: [];
                     </button>
 
                     <!-- Tombol Delete -->
-                    <button class="btn btn-danger btn-sm ml-1"
-                      data-toggle="modal"
-                      data-target="#deleteModal-<?= $row['kegiatan_id'] ?>">
-                      <i class="fas fa-trash"></i>
-                    </button>
+                    <?php if ($isApprovedActive): ?>
+                      <button class="btn btn-secondary btn-sm ml-1" type="button" disabled title="Cabut persetujuan sebelum menghapus">
+                        <i class="fas fa-lock"></i>
+                      </button>
+                    <?php else: ?>
+                      <button class="btn btn-danger btn-sm ml-1"
+                        data-toggle="modal"
+                        data-target="#deleteModal-<?= $row['kegiatan_id'] ?>">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    <?php endif; ?>
 
                   </div>
 
@@ -383,10 +393,14 @@ $oldCreateInput = Session::getFlash('old_admin_laporan_create') ?: [];
                             <input type="hidden" name="id" value="<?= $row['kegiatan_id'] ?>">
 
                             <p>
-                              Yakin ingin menghapus laporan kegiatan
+                              Laporan kegiatan
                               <strong><?= htmlspecialchars($row['kegiatan']) ?></strong>
                               milik <strong><?= htmlspecialchars($row['nama_pegawai']) ?></strong>
-                              pada <strong><?= DateHelper::hariTanggalIndo($row['tanggal']) ?></strong>?
+                              pada <strong><?= DateHelper::hariTanggalIndo($row['tanggal']) ?></strong>
+                              akan dipindahkan ke daftar terhapus.
+                            </p>
+                            <p class="mb-0 text-muted">
+                              Laporan dapat dipulihkan oleh admin selama 14 hari sebelum otomatis dihapus permanen.
                             </p>
 
                           </div>
@@ -420,9 +434,9 @@ $oldCreateInput = Session::getFlash('old_admin_laporan_create') ?: [];
             <label class="small text-muted">Aksi Kolektif</label>
             <select name="action" id="bulkAction" class="form-control" required>
               <option value="">-- Pilih Aksi --</option>
-              <option value="approve">Setujui & Tanda Tangani</option>
+              <option value="approve">Setujui</option>
               <option value="reject">Tolak</option>
-              <option value="revoke">Cabut Pengesahan</option>
+              <option value="revoke">Cabut Persetujuan</option>
               <option value="delete">Hapus</option>
             </select>
           </div>
@@ -524,15 +538,15 @@ $oldCreateInput = Session::getFlash('old_admin_laporan_create') ?: [];
   });
 </script>
 <?php if (!empty($oldCreateInput)): ?>
-<script>
-  document.addEventListener("DOMContentLoaded", function() {
-    restoreLaporanCreateDraft('form[action="/admin/kelola/laporan/create"]', <?= json_encode($oldCreateInput, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>);
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      restoreLaporanCreateDraft('form[action="/admin/kelola/laporan/create"]', <?= json_encode($oldCreateInput, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>);
 
-    if (window.jQuery) {
-      window.jQuery('#tambahLaporanModal').modal('show');
-    }
-  });
-</script>
+      if (window.jQuery) {
+        window.jQuery('#tambahLaporanModal').modal('show');
+      }
+    });
+  </script>
 <?php endif; ?>
 <?php
 $content = ob_get_clean();

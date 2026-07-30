@@ -446,6 +446,114 @@
   <script src="/public/assets/vendor/jquery-easing/jquery.easing.min.js"></script>
   <script src="/public/assets/js/sb-admin-2.min.js"></script>
 
+  <script>
+    (function() {
+      const mobileMedia = window.matchMedia("(max-width: 767.98px)");
+      const sidebar = document.getElementById("accordionSidebar");
+      const toggle = document.getElementById("sidebarToggleTop");
+
+      if (!sidebar || !toggle) {
+        return;
+      }
+
+      let backdrop = document.querySelector(".sidebar-backdrop");
+      if (!backdrop) {
+        backdrop = document.createElement("div");
+        backdrop.className = "sidebar-backdrop";
+        document.body.appendChild(backdrop);
+      }
+
+      function isMobile() {
+        return mobileMedia.matches;
+      }
+
+      function setToggleState(isOpen) {
+        toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        toggle.setAttribute("aria-label", isOpen ? "Tutup sidebar" : "Buka sidebar");
+      }
+
+      function closeMobileSidebar() {
+        if (!isMobile()) {
+          return;
+        }
+
+        document.body.classList.add("sidebar-toggled");
+        document.body.classList.remove("sidebar-mobile-open");
+        sidebar.classList.add("toggled");
+        setToggleState(false);
+      }
+
+      function openMobileSidebar() {
+        if (!isMobile()) {
+          return;
+        }
+
+        document.body.classList.remove("sidebar-toggled");
+        document.body.classList.add("sidebar-mobile-open");
+        sidebar.classList.remove("toggled");
+        setToggleState(true);
+      }
+
+      function toggleMobileSidebar(event) {
+        if (!isMobile()) {
+          return;
+        }
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+
+        if (document.body.classList.contains("sidebar-mobile-open")) {
+          closeMobileSidebar();
+        } else {
+          openMobileSidebar();
+        }
+      }
+
+      toggle.addEventListener("click", toggleMobileSidebar, true);
+      backdrop.addEventListener("click", closeMobileSidebar);
+
+      document.addEventListener("click", function(event) {
+        if (!isMobile() || !document.body.classList.contains("sidebar-mobile-open")) {
+          return;
+        }
+
+        if (sidebar.contains(event.target) || toggle.contains(event.target)) {
+          return;
+        }
+
+        closeMobileSidebar();
+      });
+
+      sidebar.querySelectorAll("a.nav-link").forEach(function(link) {
+        link.addEventListener("click", function() {
+          if (!link.dataset.toggle) {
+            closeMobileSidebar();
+          }
+        });
+      });
+
+      function syncSidebarForViewport() {
+        if (isMobile()) {
+          closeMobileSidebar();
+          return;
+        }
+
+        document.body.classList.remove("sidebar-toggled");
+        document.body.classList.remove("sidebar-mobile-open");
+        sidebar.classList.remove("toggled");
+        setToggleState(false);
+      }
+
+      if (typeof mobileMedia.addEventListener === "function") {
+        mobileMedia.addEventListener("change", syncSidebarForViewport);
+      } else if (typeof mobileMedia.addListener === "function") {
+        mobileMedia.addListener(syncSidebarForViewport);
+      }
+
+      syncSidebarForViewport();
+    })();
+  </script>
+
   <!-- Datatables -->
   <script src="/public/assets/vendor/datatables/jquery.dataTables.min.js"></script>
   <script src="/public/assets/vendor/datatables/dataTables.bootstrap4.min.js"></script>

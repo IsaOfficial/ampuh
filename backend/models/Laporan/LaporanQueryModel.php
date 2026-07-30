@@ -30,7 +30,11 @@ class LaporanQueryModel
                 lk.approval_revoked_at,
                 lk.signature_note,
                 lk.rejection_note,
+                lk.deleted_at,
+                lk.deleted_by,
+                lk.delete_reason,
                 admin.nama AS signed_name,
+                deleter.nama AS deleted_by_name,
 
                 u.id         AS pegawai_id,
                 u.nama       AS nama_pegawai,
@@ -45,6 +49,8 @@ class LaporanQueryModel
                 ON u.id = lh.user_id
             LEFT JOIN user admin
                 ON admin.id = lk.approved_by
+            LEFT JOIN user deleter
+                ON deleter.id = lk.deleted_by
         ";
 
         $conditions = [];
@@ -65,7 +71,15 @@ class LaporanQueryModel
             $params['end'] = $end;
         }
 
-        if (in_array($status, ['pending', 'approved', 'rejected'], true)) {
+        if ($status === 'deleted') {
+            $conditions[] = 'lk.deleted_at IS NOT NULL';
+        } else {
+            $conditions[] = 'lk.deleted_at IS NULL';
+        }
+
+        if ($status === 'revoked') {
+            $conditions[] = 'lk.approval_revoked_at IS NOT NULL';
+        } elseif (in_array($status, ['pending', 'approved', 'rejected'], true)) {
             $conditions[] = "COALESCE(lk.approval_status, 'pending') = :status";
             $params['status'] = $status;
         }
@@ -105,6 +119,7 @@ class LaporanQueryModel
             lk.approval_revoked_at,
             lk.signature_note,
             lk.rejection_note,
+            lk.deleted_at,
             admin.nama AS signed_name
         FROM laporan_kegiatan lk
         JOIN laporan_harian lh
@@ -112,6 +127,7 @@ class LaporanQueryModel
         LEFT JOIN user admin
             ON admin.id = lk.approved_by
         WHERE lh.user_id = :pegawai_id
+          AND lk.deleted_at IS NULL
     ";
 
         $params = [
@@ -140,6 +156,60 @@ class LaporanQueryModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function getDeletedLaporanByPegawai(
+        int $pegawaiId,
+        ?string $start = null,
+        ?string $end = null
+    ): array {
+        $sql = "
+        SELECT
+            lh.id        AS laporan_id,
+            lh.tanggal,
+
+            lk.id        AS kegiatan_id,
+            lk.kegiatan,
+            lk.output,
+            lk.bukti,
+            COALESCE(lk.approval_status, 'pending') AS status,
+            lk.approved_by,
+            lk.approved_at,
+            lk.verification_token,
+            lk.document_hash,
+            lk.approval_revoked_at,
+            lk.signature_note,
+            lk.rejection_note,
+            lk.deleted_at,
+            lk.deleted_by,
+            lk.delete_reason
+        FROM laporan_kegiatan lk
+        JOIN laporan_harian lh
+            ON lh.id = lk.laporan_id
+        WHERE lh.user_id = :pegawai_id
+          AND lk.deleted_at IS NOT NULL
+    ";
+
+        $params = [
+            'pegawai_id' => $pegawaiId
+        ];
+
+        if ($start !== null) {
+            $sql .= " AND lh.tanggal >= :start";
+            $params['start'] = $start;
+        }
+
+        if ($end !== null) {
+            $sql .= " AND lh.tanggal <= :end";
+            $params['end'] = $end;
+        }
+
+        $sql .= " ORDER BY lk.deleted_at DESC, lh.tanggal DESC, lk.id DESC";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function getDetailLaporan(int $laporanId): array
     {
         $stmt = $this->db->prepare("
@@ -159,6 +229,7 @@ class LaporanQueryModel
                 lk.approval_revoked_at,
                 lk.signature_note,
                 lk.rejection_note,
+                lk.deleted_at,
                 admin.nama AS signed_name,
 
                 u.id         AS pegawai_id,
@@ -171,6 +242,7 @@ class LaporanQueryModel
             LEFT JOIN user admin
                 ON admin.id = lk.approved_by
             WHERE lh.id = :id
+              AND lk.deleted_at IS NULL
         ");
 
         $stmt->execute([

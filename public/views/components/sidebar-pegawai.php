@@ -28,6 +28,13 @@
   </li>
 
   <li class="nav-item">
+    <a class="nav-link" href="/pegawai/laporan/sampah">
+      <i class="fas fa-trash-restore"></i>
+      <span>Sampah</span>
+    </a>
+  </li>
+
+  <li class="nav-item">
     <a class="nav-link" href="/pegawai/profil">
       <i class="fas fa-user"></i>
       <span>Profil</span>

@@ -1,5 +1,6 @@
 /vendor/
 /ampuh.zip
+/backend/*.zip
 /public/*.zip
 /public/uploads/*
 !/public/uploads/

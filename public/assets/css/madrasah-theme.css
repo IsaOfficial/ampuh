@@ -77,6 +77,34 @@
   color: white !important;
 }
 
+.export-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.export-card-actions .btn {
+  min-width: 96px;
+  white-space: nowrap;
+}
+
+.export-card-actions.export-card-actions-compact .btn {
+  min-width: 84px;
+}
+
+.table-card-actions {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.table-card-actions .btn {
+  white-space: nowrap;
+}
+
 /* -----------------------------------------------------------
    Forms: Input Focus Highlight (Madrasah Green)
    ----------------------------------------------------------- */
@@ -187,6 +215,73 @@
   border: 2px solid #2e8b57; /* Tema madrasah */
 }
 
+.profile-summary-card {
+  overflow: hidden;
+}
+
+.profile-summary {
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
+  min-width: 0;
+  padding: 1.75rem;
+}
+
+.profile-summary-media {
+  flex: 0 0 auto;
+}
+
+.profile-summary-img {
+  display: block;
+}
+
+.profile-summary-content {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.profile-summary-name {
+  max-width: 100%;
+  font-size: clamp(1.5rem, 3.2vw, 2.5rem);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.profile-summary-meta {
+  display: flex;
+  max-width: 100%;
+  color: #858796;
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.profile-summary-label {
+  flex: 0 0 4.5rem;
+  color: #6e707e;
+}
+
+.profile-summary-separator {
+  flex: 0 0 auto;
+  margin-right: 0.35rem;
+  color: #6e707e;
+}
+
+.profile-summary-value {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.topbar-logo {
+  min-width: 0;
+}
+
+.topbar-logo img {
+  max-width: min(62vw, 240px);
+  object-fit: contain;
+}
+
 .position-relative {
   position: relative;
 }
@@ -253,4 +348,175 @@
   margin-top: 0.25rem;
   font-size: 0.72rem;
   color: #858796;
+}
+
+@media (max-width: 767.98px) {
+  #page-content {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .topbar {
+    min-width: 0;
+  }
+
+  .btn-toggle-madrasah {
+    flex: 0 0 45px;
+    margin-right: 0.75rem !important;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1040;
+    width: 14rem !important;
+    height: 100vh;
+    min-height: 100vh;
+    overflow-y: auto;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease-in-out;
+    box-shadow: none;
+  }
+
+  .sidebar.toggled {
+    width: 14rem !important;
+    overflow-y: auto;
+    transform: translateX(-100%);
+    box-shadow: none;
+  }
+
+  body.sidebar-mobile-open .sidebar {
+    transform: translateX(0);
+    box-shadow: 0 0.5rem 1.75rem rgba(15, 23, 42, 0.24);
+  }
+
+  .sidebar .sidebar-brand {
+    justify-content: flex-start !important;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .sidebar .sidebar-brand .sidebar-brand-text {
+    display: inline;
+  }
+
+  .sidebar .nav-item .nav-link {
+    display: block;
+    width: 14rem;
+    text-align: left;
+    padding: 0.95rem 1rem;
+  }
+
+  .sidebar .nav-item .nav-link i {
+    width: 1.25rem;
+    margin-right: 0.35rem;
+    text-align: center;
+  }
+
+  .sidebar .nav-item .nav-link span {
+    display: inline;
+    font-size: 0.85rem;
+  }
+
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1035;
+    display: none;
+    background: rgba(17, 24, 39, 0.42);
+  }
+
+  body.sidebar-mobile-open {
+    overflow: hidden;
+  }
+
+  body.sidebar-mobile-open .sidebar-backdrop {
+    display: block;
+  }
+
+  .profile-summary {
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.25rem;
+    text-align: center;
+  }
+
+  .profile-summary-img {
+    width: 112px;
+    height: 112px;
+    border-width: 3px;
+  }
+
+  .profile-summary-name {
+    font-size: 1.55rem;
+    line-height: 1.18;
+    margin-bottom: 1rem !important;
+  }
+
+  .profile-summary-meta {
+    justify-content: center;
+    font-size: 0.95rem;
+    text-align: left;
+  }
+
+  .profile-summary-meta:first-of-type .profile-summary-label::after {
+    content: ".";
+  }
+
+  .profile-summary-meta:first-of-type .profile-summary-separator,
+  .profile-summary-position .profile-summary-label,
+  .profile-summary-position .profile-summary-separator {
+    display: none;
+  }
+
+  .profile-summary-label {
+    flex: 0 0 auto;
+    margin-right: 0.25rem;
+  }
+
+  #formInputLaporan form {
+    padding: 1.25rem !important;
+  }
+
+  .card-body {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  #page-content {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .profile-summary {
+    padding: 1rem;
+  }
+
+  .profile-summary-img {
+    width: 96px;
+    height: 96px;
+  }
+
+  .profile-summary-name {
+    font-size: 1.35rem;
+  }
+
+  .profile-summary-meta {
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+
+  .profile-summary-label {
+    flex-basis: auto;
+    font-weight: 700;
+  }
+
+  .profile-summary-value {
+    display: inline;
+  }
 }

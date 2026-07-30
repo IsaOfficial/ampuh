@@ -28,6 +28,13 @@
   </li>
 
   <li class="nav-item">
+    <a class="nav-link" href="/admin/kelola/laporan/sampah">
+      <i class="fas fa-trash-restore"></i>
+      <span>Sampah</span>
+    </a>
+  </li>
+
+  <li class="nav-item">
     <a class="nav-link" href="/admin/kelola/pegawai">
       <i class="fas fa-user"></i>
       <span>Kelola Pegawai</span>

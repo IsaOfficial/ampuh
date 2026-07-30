@@ -117,27 +117,128 @@ $approverName = trim((string) ($firstSignedReport['signed_name'] ?? $admin['nama
 <head>
     <meta charset="UTF-8">
     <style>
-        body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #000; }
-        table { width: 100%; border-collapse: collapse; }
-        .meta-table td, .meta-table th { border: none; padding: 3px 6px; }
-        .title { text-align: center; font-size: 16px; font-weight: bold; border-bottom: 2px solid #000 !important; padding-bottom: 8px !important; }
-        .info-label { width: 80px; font-weight: bold; }
-        .report-table { margin-top: 12px; font-size: 11px; }
-        .report-table th, .report-table td { border: 1px solid #000; padding: 6px 8px; vertical-align: top; }
-        .report-table th { background: #eaeaea; text-align: center; font-weight: bold; }
-        .report-table tr:nth-child(even) td { background: #f9f9f9; }
-        .text-center { text-align: center; }
-        .text-start { text-align: left; }
-        .text-small { font-size: 10px; }
-        .evidence-cell, .status-cell { text-align: center; vertical-align: top; }
-        .evidence-img { display: block; margin: 0 auto 4px; max-width: 90px; max-height: 70px; }
-        .evidence-icon { display: block; margin: 0 auto 4px; width: 44px; height: 44px; object-fit: contain; }
-        .file-badge { display: inline-block; min-width: 44px; padding: 12px 4px; border: 1px solid #000; font-weight: bold; text-align: center; }
-        .file-name { display: block; font-size: 10px; word-break: break-all; }
-        .status-text { white-space: pre-line; font-weight: bold; }
-        .note { margin-top: 10px; font-size: 10px; font-style: italic; text-align: left; }
-        .footer-table { margin-top: 28px; }
-        .signature { text-align: right; border: none !important; }
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 12px;
+            color: #000;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .meta-table td,
+        .meta-table th {
+            border: none;
+            padding: 3px 6px;
+        }
+
+        .title {
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            border-bottom: 2px solid #000 !important;
+            padding-bottom: 8px !important;
+        }
+
+        .info-label {
+            width: 80px;
+            font-weight: bold;
+        }
+
+        .report-table {
+            margin-top: 12px;
+            font-size: 11px;
+        }
+
+        .report-table th,
+        .report-table td {
+            border: 1px solid #000;
+            padding: 6px 8px;
+            vertical-align: top;
+        }
+
+        .report-table th {
+            background: #eaeaea;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .report-table tr:nth-child(even) td {
+            background: #f9f9f9;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-start {
+            text-align: left;
+        }
+
+        .text-small {
+            font-size: 10px;
+        }
+
+        .evidence-cell,
+        .status-cell {
+            text-align: center;
+            vertical-align: top;
+        }
+
+        .evidence-img {
+            display: block;
+            margin: 0 auto 3px;
+            width: 54px;
+            height: 42px;
+            object-fit: contain;
+        }
+
+        .evidence-icon {
+            display: block;
+            margin: 0 auto 3px;
+            width: 30px;
+            height: 30px;
+            object-fit: contain;
+        }
+
+        .file-badge {
+            display: inline-block;
+            min-width: 32px;
+            padding: 7px 3px;
+            border: 1px solid #000;
+            font-size: 9px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .file-name {
+            display: block;
+            font-size: 9px;
+            word-break: break-all;
+        }
+
+        .status-text {
+            white-space: pre-line;
+            font-weight: bold;
+        }
+
+        .note {
+            margin-top: 10px;
+            font-size: 10px;
+            font-style: italic;
+            text-align: left;
+        }
+
+        .footer-table {
+            margin-top: 28px;
+        }
+
+        .signature {
+            text-align: right;
+            border: none !important;
+        }
     </style>
 </head>
 
@@ -146,7 +247,9 @@ $approverName = trim((string) ($firstSignedReport['signed_name'] ?? $admin['nama
         <tr>
             <th colspan="7" class="title">REKAPITULASI LAPORAN KEGIATAN PEGAWAI</th>
         </tr>
-        <tr><td colspan="7">&nbsp;</td></tr>
+        <tr>
+            <td colspan="7">&nbsp;</td>
+        </tr>
         <tr>
             <td class="info-label">Nama</td>
             <td colspan="6">: <?= htmlspecialchars($pegawai['nama'] ?? 'Semua Pegawai') ?></td>
@@ -211,11 +314,11 @@ $approverName = trim((string) ($firstSignedReport['signed_name'] ?? $admin['nama
                                 ?>
                                 <a href="<?= htmlspecialchars($evidenceUrl) ?>" target="_blank">
                                     <?php if ($evidenceKind === 'image'): ?>
-                                        <img src="<?= htmlspecialchars($evidenceUrl) ?>" alt="Bukti" class="evidence-img">
+                                        <img src="<?= htmlspecialchars($evidenceUrl) ?>" alt="Bukti" class="evidence-img" width="54" height="42">
                                     <?php elseif ($evidenceKind === 'document' && strtolower(pathinfo($evidenceFile, PATHINFO_EXTENSION)) === 'pdf'): ?>
-                                        <img src="<?= htmlspecialchars(excelPdfIconUrl()) ?>" alt="PDF" class="evidence-icon">
+                                        <img src="<?= htmlspecialchars(excelPdfIconUrl()) ?>" alt="PDF" class="evidence-icon" width="30" height="30">
                                     <?php elseif ($evidenceKind === 'video'): ?>
-                                        <img src="<?= htmlspecialchars(excelMp4IconUrl()) ?>" alt="Video" class="evidence-icon">
+                                        <img src="<?= htmlspecialchars(excelMp4IconUrl()) ?>" alt="Video" class="evidence-icon" width="30" height="30">
                                     <?php else: ?>
                                         <span class="file-badge"><?= htmlspecialchars($evidenceExt) ?></span><br>
                                     <?php endif; ?>
@@ -235,6 +338,8 @@ $approverName = trim((string) ($firstSignedReport['signed_name'] ?? $admin['nama
     <div class="note">
         * Cek kode verifikasi pada kolom Status melalui <?= htmlspecialchars($verificationCheckUrl) ?>. Setiap kode berlaku untuk satu kegiatan pada baris yang sama.
     </div>
+
+    <br><br>
 
     <table class="footer-table">
         <tr>

@@ -71,10 +71,15 @@ CREATE TABLE `laporan_kegiatan` (
   `approval_revoked_at` datetime DEFAULT NULL,
   `signature_note` varchar(255) DEFAULT NULL,
   `rejection_note` varchar(255) DEFAULT NULL,
+  `deleted_at` datetime DEFAULT NULL,
+  `deleted_by` int(11) DEFAULT NULL,
+  `delete_reason` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_laporan_kegiatan_verification_token` (`verification_token`),
   KEY `idx_laporan_kegiatan_approval_status` (`approval_status`),
-  KEY `idx_laporan_kegiatan_approved_by` (`approved_by`)
+  KEY `idx_laporan_kegiatan_approved_by` (`approved_by`),
+  KEY `idx_laporan_kegiatan_deleted_at` (`deleted_at`),
+  KEY `idx_laporan_kegiatan_deleted_by` (`deleted_by`)
 ) ENGINE=InnoDB AUTO_INCREMENT=486 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

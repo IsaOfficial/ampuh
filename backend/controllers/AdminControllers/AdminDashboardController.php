@@ -34,6 +34,7 @@ class AdminDashboardController
         // AUTHORIZATION
         // =========================
         $admin = $this->authService->admin();
+        $today = (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta')))->format('Y-m-d');
 
         // =========================
         // STATISTIK UTAMA
@@ -42,8 +43,10 @@ class AdminDashboardController
             'totalPegawai'         => $this->pegawaiModel->countPegawai(),
             'totalLaporanHarian'   => $this->laporanHarianModel->countAll(),
             'totalLaporanKegiatan' => $this->laporanKegiatanModel->countAll(),
-            'belumKirimHariIni'    => $this->laporanHarianModel->countBelumKirimHariIni(),
+            'kirimHariIni'         => $this->laporanHarianModel->countKirimHariIni($today),
+            'belumKirimHariIni'    => $this->laporanHarianModel->countBelumKirimHariIni($today),
             'approvalStatus'       => $this->laporanHarianModel->countByApprovalStatus(),
+            'tanggalHariIni'       => $today,
         ];
 
         // =========================
@@ -60,8 +63,9 @@ class AdminDashboardController
         // =========================
         // TABLE DATA
         // =========================
-        $laporanTerbaru = $this->laporanHarianModel->latest(5);
-        $tidakKirim     = $this->laporanHarianModel->belumKirimHariIni(5);
+        $laporanTerbaru       = $this->laporanHarianModel->latest(5);
+        $menungguDisetujui    = $this->laporanHarianModel->latestPendingKegiatan(5);
+        $tidakKirim           = $this->laporanHarianModel->belumKirimHariIni(5, $today);
 
         // =========================
         // RENDER VIEW
@@ -78,8 +82,9 @@ class AdminDashboardController
             'pieChart'        => $pieChart,
 
             // Tables
-            'laporanTerbaru'  => $laporanTerbaru,
-            'tidakKirim'      => $tidakKirim,
+            'laporanTerbaru'      => $laporanTerbaru,
+            'menungguDisetujui'   => $menungguDisetujui,
+            'tidakKirim'          => $tidakKirim,
         ]);
     }
 }

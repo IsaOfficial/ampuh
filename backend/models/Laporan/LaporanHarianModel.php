@@ -92,10 +92,11 @@ class LaporanHarianModel
 
         try {
             $stmt = $this->db->prepare("
-                SELECT *
-                FROM laporan_kegiatan
-                WHERE id = :id
-                FOR UPDATE
+            SELECT *
+            FROM laporan_kegiatan
+            WHERE id = :id
+              AND deleted_at IS NULL
+            FOR UPDATE
             ");
             $stmt->execute([':id' => $kegiatanId]);
 
@@ -127,6 +128,7 @@ class LaporanHarianModel
                     signature_note = :signature_note,
                     rejection_note = NULL
                 WHERE id = :id
+                  AND deleted_at IS NULL
             ");
 
             $update->execute([
@@ -171,6 +173,7 @@ class LaporanHarianModel
                 signature_note = NULL,
                 rejection_note = ?
             WHERE id IN ({$placeholders})
+              AND deleted_at IS NULL
         ");
 
         $stmt->execute(array_merge([$rejectionNote], $kegiatanIds));
@@ -186,7 +189,9 @@ class LaporanHarianModel
                 approval_status = 'pending',
                 approval_revoked_at = NOW(),
                 rejection_note = NULL
-            WHERE id = :id AND approval_status = 'approved'
+            WHERE id = :id
+              AND approval_status = 'approved'
+              AND deleted_at IS NULL
         ");
 
         $stmt->execute([':id' => $kegiatanId]);
@@ -210,6 +215,7 @@ class LaporanHarianModel
                 rejection_note = NULL
             WHERE id IN ({$placeholders})
               AND approval_status = 'approved'
+              AND deleted_at IS NULL
         ");
 
         $stmt->execute($kegiatanIds);
@@ -229,7 +235,9 @@ class LaporanHarianModel
                 approval_revoked_at = NULL,
                 signature_note = NULL,
                 rejection_note = NULL
-            WHERE laporan_id = :id AND approval_status <> 'approved'
+            WHERE laporan_id = :id
+              AND approval_status <> 'approved'
+              AND deleted_at IS NULL
         ");
 
         $stmt->execute([':id' => $laporanId]);
@@ -253,7 +261,9 @@ class LaporanHarianModel
                 {$revokedAtSql}
                 signature_note = NULL,
                 rejection_note = NULL
-            WHERE id = :id AND approval_status <> 'approved'
+            WHERE id = :id
+              AND approval_status <> 'approved'
+              AND deleted_at IS NULL
         ");
 
         $stmt->execute([':id' => $kegiatanId]);
@@ -261,26 +271,59 @@ class LaporanHarianModel
     public function countByApprovalStatus(): array
     {
         $stmt = $this->db->prepare("
-            SELECT COALESCE(approval_status, 'pending') AS status, COUNT(*) AS total
+            SELECT
+                SUM(CASE
+                    WHEN approval_revoked_at IS NOT NULL THEN 1
+                    ELSE 0
+                END) AS revoked,
+                SUM(CASE
+                    WHEN approval_revoked_at IS NULL
+                     AND COALESCE(approval_status, 'pending') = 'pending' THEN 1
+                    ELSE 0
+                END) AS pending,
+                SUM(CASE
+                    WHEN approval_revoked_at IS NULL
+                     AND approval_status = 'approved' THEN 1
+                    ELSE 0
+                END) AS approved,
+                SUM(CASE
+                    WHEN approval_revoked_at IS NULL
+                     AND approval_status = 'rejected' THEN 1
+                    ELSE 0
+                END) AS rejected
             FROM laporan_kegiatan
-            GROUP BY COALESCE(approval_status, 'pending')
+            WHERE deleted_at IS NULL
         ");
         $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
 
-        $counts = [
-            'pending' => 0,
-            'approved' => 0,
-            'rejected' => 0,
+        return [
+            'pending'  => (int) ($row['pending'] ?? 0),
+            'approved' => (int) ($row['approved'] ?? 0),
+            'rejected' => (int) ($row['rejected'] ?? 0),
+            'revoked'  => (int) ($row['revoked'] ?? 0),
         ];
+    }
 
-        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-            $status = $row['status'] ?? 'pending';
-            if (array_key_exists($status, $counts)) {
-                $counts[$status] = (int) $row['total'];
-            }
+    public function countKirimHariIni(?string $tanggal = null): int
+    {
+        if ($tanggal === null) {
+            $tanggal = (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta')))->format('Y-m-d');
         }
 
-        return $counts;
+        $stmt = $this->db->prepare("
+            SELECT COUNT(DISTINCT user_id)
+            FROM {$this->table} lh
+            WHERE lh.tanggal = :tanggal
+              AND EXISTS (
+                  SELECT 1
+                  FROM laporan_kegiatan lk
+                  WHERE lk.laporan_id = lh.id
+                    AND lk.deleted_at IS NULL
+              )
+        ");
+        $stmt->execute([':tanggal' => $tanggal]);
+        return (int) $stmt->fetchColumn();
     }
 
     public function deleteBulk(array $kegiatanIds): int
@@ -348,6 +391,7 @@ class LaporanHarianModel
             JOIN {$this->table} lh ON lh.id = lk.laporan_id
             JOIN user u ON u.id = lh.user_id
             WHERE lk.id = :id
+              AND lk.deleted_at IS NULL
             LIMIT 1
         ");
         $stmt->execute([':id' => $kegiatanId]);
@@ -388,6 +432,7 @@ class LaporanHarianModel
                 lk.verification_token,
                 lk.document_hash,
                 lk.approval_revoked_at,
+                lk.deleted_at,
                 lh.id AS laporan_id,
                 lh.tanggal,
                 u.nama AS nama_pegawai,
@@ -399,6 +444,7 @@ class LaporanHarianModel
             JOIN user u ON u.id = lh.user_id
             LEFT JOIN user admin ON admin.id = lk.approved_by
             WHERE lk.verification_token = :token
+              AND lk.deleted_at IS NULL
             LIMIT 1
         ");
         $stmt->execute([':token' => $token]);
@@ -421,6 +467,7 @@ class LaporanHarianModel
                 lk.verification_token,
                 lk.document_hash,
                 lk.approval_revoked_at,
+                lk.deleted_at,
                 lh.id AS laporan_id,
                 lh.tanggal,
                 u.nama AS nama_pegawai,
@@ -432,6 +479,7 @@ class LaporanHarianModel
             JOIN user u ON u.id = lh.user_id
             LEFT JOIN user admin ON admin.id = lk.approved_by
             WHERE lk.verification_token LIKE CONCAT(:code, '%')
+              AND lk.deleted_at IS NULL
             LIMIT 2
         ");
         $stmt->execute([':code' => strtolower($code)]);
@@ -444,6 +492,7 @@ class LaporanHarianModel
         $stmt = $this->db->prepare("
         SELECT COUNT(*) FROM laporan_kegiatan
         WHERE laporan_id = :id
+          AND deleted_at IS NULL
     ");
         $stmt->execute(['id' => $laporanId]);
 
@@ -474,35 +523,59 @@ class LaporanHarianModel
 
     public function hasSubmittedToday(int $userId): bool
     {
-        return (bool) $this->findByUserAndDate(
-            $userId,
-            date('Y-m-d')
-        );
+        $tanggal = (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta')))->format('Y-m-d');
+        $stmt = $this->db->prepare("
+            SELECT 1
+            FROM {$this->table} lh
+            JOIN laporan_kegiatan lk ON lk.laporan_id = lh.id
+            WHERE lh.user_id = :user_id
+              AND lh.tanggal = :tanggal
+              AND lk.deleted_at IS NULL
+            LIMIT 1
+        ");
+        $stmt->execute([
+            ':user_id' => $userId,
+            ':tanggal' => $tanggal,
+        ]);
+
+        return (bool) $stmt->fetchColumn();
     }
 
     public function countAll(): int
     {
         $stmt = $this->db->prepare("
-        SELECT COUNT(*) 
-        FROM {$this->table}
+        SELECT COUNT(DISTINCT lh.id)
+        FROM {$this->table} lh
+        JOIN laporan_kegiatan lk ON lk.laporan_id = lh.id
+        WHERE lk.deleted_at IS NULL
     ");
         $stmt->execute();
         return (int) $stmt->fetchColumn();
     }
 
-    public function countBelumKirimHariIni(): int
+    public function countBelumKirimHariIni(?string $tanggal = null): int
     {
+        if ($tanggal === null) {
+            $tanggal = (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta')))->format('Y-m-d');
+        }
+
         $stmt = $this->db->prepare("
         SELECT COUNT(*)
         FROM user u
         WHERE u.role = 'pegawai'
         AND u.id NOT IN (
-            SELECT user_id
-            FROM {$this->table}
-            WHERE tanggal = CURDATE()
+            SELECT lh.user_id
+            FROM {$this->table} lh
+            WHERE lh.tanggal = :tanggal
+              AND EXISTS (
+                  SELECT 1
+                  FROM laporan_kegiatan lk
+                  WHERE lk.laporan_id = lh.id
+                    AND lk.deleted_at IS NULL
+              )
         )
     ");
-        $stmt->execute();
+        $stmt->execute([':tanggal' => $tanggal]);
         return (int) $stmt->fetchColumn();
     }
 
@@ -510,11 +583,13 @@ class LaporanHarianModel
     {
         $stmt = $this->db->prepare("
         SELECT 
-            DATE(tanggal) AS tgl,
-            COUNT(*) AS total
-        FROM {$this->table}
-        WHERE tanggal >= CURDATE() - INTERVAL 29 DAY
-        GROUP BY DATE(tanggal)
+            DATE(lh.tanggal) AS tgl,
+            COUNT(DISTINCT lh.id) AS total
+        FROM {$this->table} lh
+        JOIN laporan_kegiatan lk ON lk.laporan_id = lh.id
+        WHERE lh.tanggal >= CURDATE() - INTERVAL 29 DAY
+          AND lk.deleted_at IS NULL
+        GROUP BY DATE(lh.tanggal)
         ORDER BY tgl ASC
     ");
         $stmt->execute();
@@ -539,11 +614,18 @@ class LaporanHarianModel
         SELECT 
             u.nama,
             u.foto,
-            l.created_at
-        FROM {$this->table} l
-        JOIN user u ON u.id = l.user_id
+            lh.tanggal,
+            lh.created_at,
+            lk.id AS kegiatan_id,
+            lk.kegiatan,
+            COALESCE(lk.approval_status, 'pending') AS status,
+            lk.approval_revoked_at
+        FROM laporan_kegiatan lk
+        JOIN {$this->table} lh ON lh.id = lk.laporan_id
+        JOIN user u ON u.id = lh.user_id
         WHERE u.role = 'pegawai'
-        ORDER BY l.created_at DESC
+          AND lk.deleted_at IS NULL
+        ORDER BY lh.created_at DESC, lk.id DESC
         LIMIT :limit
     ");
 
@@ -553,20 +635,56 @@ class LaporanHarianModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function belumKirimHariIni(int $limit = 5): array
+    public function latestPendingKegiatan(int $limit = 5): array
     {
+        $stmt = $this->db->prepare("
+        SELECT
+            u.nama,
+            u.foto,
+            lh.tanggal,
+            lh.created_at,
+            lk.id AS kegiatan_id,
+            lk.kegiatan
+        FROM laporan_kegiatan lk
+        JOIN {$this->table} lh ON lh.id = lk.laporan_id
+        JOIN user u ON u.id = lh.user_id
+        WHERE u.role = 'pegawai'
+          AND lk.approval_revoked_at IS NULL
+          AND COALESCE(lk.approval_status, 'pending') = 'pending'
+          AND lk.deleted_at IS NULL
+        ORDER BY lh.created_at DESC, lk.id DESC
+        LIMIT :limit
+    ");
+
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function belumKirimHariIni(int $limit = 5, ?string $tanggal = null): array
+    {
+        if ($tanggal === null) {
+            $tanggal = (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta')))->format('Y-m-d');
+        }
+
         $stmt = $this->db->prepare("
         SELECT u.id, u.nama, u.jabatan
         FROM user u
-        LEFT JOIN laporan_harian lh
-            ON lh.user_id = u.id
-           AND lh.tanggal = CURDATE()
         WHERE u.role = 'pegawai'
-          AND lh.id IS NULL
+          AND NOT EXISTS (
+              SELECT 1
+              FROM laporan_harian today_lh
+              JOIN laporan_kegiatan lk ON lk.laporan_id = today_lh.id
+              WHERE today_lh.user_id = u.id
+                AND today_lh.tanggal = :tanggal
+                AND lk.deleted_at IS NULL
+          )
         ORDER BY u.nama ASC
         LIMIT :limit
     ");
 
+        $stmt->bindValue(':tanggal', $tanggal);
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->execute();
 

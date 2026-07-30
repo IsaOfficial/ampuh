@@ -3,6 +3,7 @@
 class LaporanService
 {
     private const PEGAWAI_EDIT_WINDOW_DAYS = 3;
+    private const DELETED_RETENTION_DAYS = 14;
     private const APP_TIMEZONE = 'Asia/Jakarta';
     public function __construct(
         private LaporanHarianModel $laporanHarian,
@@ -122,11 +123,6 @@ class LaporanService
     {
         $count = $this->laporanKegiatan->countByLaporanId($laporanId);
 
-        // Jika kosong, hapus laporan harian
-        if ($count === 0) {
-            $this->laporanHarian->delete($laporanId);
-        }
-
         $this->laporanHarian->recalculateKegiatanCount($laporanId, $count);
     }
 
@@ -174,18 +170,44 @@ class LaporanService
             'approve' => $this->laporanHarian->approveBulk($laporanIds, $adminId, $adminName, $signatureNote),
             'reject'  => $this->laporanHarian->rejectBulk($laporanIds, $rejectionNote),
             'revoke'  => $this->laporanHarian->revokeBulk($laporanIds),
-            'delete'  => $this->deleteKegiatanBulkByAdmin($laporanIds),
+            'delete'  => $this->deleteKegiatanBulkByAdmin($laporanIds, $adminId),
+            'restore' => $this->restoreKegiatanBulkByAdmin($laporanIds),
+            'force_delete' => $this->forceDeleteKegiatanBulkByAdmin($laporanIds),
             default   => throw new Exception("Aksi bulk tidak valid."),
         };
     }
 
 
-    private function deleteKegiatanBulkByAdmin(array $kegiatanIds): int
+    private function deleteKegiatanBulkByAdmin(array $kegiatanIds, int $adminId): int
     {
         $deleted = 0;
 
         foreach ($kegiatanIds as $kegiatanId) {
-            $this->deleteKegiatanByAdmin((int) $kegiatanId);
+            $this->deleteKegiatanByAdmin((int) $kegiatanId, $adminId);
+            $deleted++;
+        }
+
+        return $deleted;
+    }
+
+    private function restoreKegiatanBulkByAdmin(array $kegiatanIds): int
+    {
+        $restored = 0;
+
+        foreach ($kegiatanIds as $kegiatanId) {
+            $this->restoreKegiatanByAdmin((int) $kegiatanId);
+            $restored++;
+        }
+
+        return $restored;
+    }
+
+    private function forceDeleteKegiatanBulkByAdmin(array $kegiatanIds): int
+    {
+        $deleted = 0;
+
+        foreach ($kegiatanIds as $kegiatanId) {
+            $this->forceDeleteKegiatanByAdmin((int) $kegiatanId);
             $deleted++;
         }
 
@@ -353,14 +375,7 @@ class LaporanService
             $this->assertTanggalEditableByPegawai((string) $laporan['tanggal']);
         }
 
-        if (!empty($data['bukti'])) {
-            $this->documentUploadService->delete(
-                $this->uploadDir,
-                $data['bukti']
-            );
-        }
-
-        $this->laporanKegiatan->delete($kegiatanId);
+        $this->laporanKegiatan->softDelete($kegiatanId, $pegawaiId);
 
         $this->refreshKegiatanCount((int) $data['laporan_id']);
     }
@@ -413,7 +428,7 @@ class LaporanService
         $this->refreshKegiatanCount($laporanId);
     }
 
-    public function deleteKegiatanByAdmin(int $kegiatanId): void
+    public function deleteKegiatanByAdmin(int $kegiatanId, int $adminId): void
     {
         $data = $this->laporanKegiatan->findById($kegiatanId);
 
@@ -421,6 +436,71 @@ class LaporanService
             throw new Exception("Data laporan tidak ditemukan.");
         }
 
+        if (($data['approval_status'] ?? 'pending') === 'approved' && empty($data['approval_revoked_at'])) {
+            throw new Exception("Cabut persetujuan laporan sebelum menghapusnya.");
+        }
+
+        $this->laporanKegiatan->softDelete($kegiatanId, $adminId);
+
+        $this->refreshKegiatanCount((int) $data['laporan_id']);
+    }
+
+    public function restoreKegiatanByAdmin(int $kegiatanId): void
+    {
+        $data = $this->laporanKegiatan->findById($kegiatanId, true);
+
+        if (!$data || empty($data['deleted_at'])) {
+            throw new Exception("Data laporan terhapus tidak ditemukan.");
+        }
+
+        $this->laporanKegiatan->restore($kegiatanId);
+        $this->refreshKegiatanCount((int) $data['laporan_id']);
+    }
+
+    public function restoreKegiatanByPegawai(int $pegawaiId, int $kegiatanId): void
+    {
+        $data = $this->laporanKegiatan->findById($kegiatanId, true);
+
+        if (!$data || empty($data['deleted_at'])) {
+            throw new Exception("Data laporan terhapus tidak ditemukan.");
+        }
+
+        $laporan = $this->laporanHarian->findById((int) $data['laporan_id']);
+
+        if (!$laporan || (int) $laporan['user_id'] !== $pegawaiId) {
+            throw new Exception("Akses tidak diizinkan.");
+        }
+
+        $this->laporanKegiatan->restore($kegiatanId);
+        $this->refreshKegiatanCount((int) $data['laporan_id']);
+    }
+
+    public function forceDeleteKegiatanByAdmin(int $kegiatanId): void
+    {
+        $data = $this->laporanKegiatan->findById($kegiatanId, true);
+
+        if (!$data || empty($data['deleted_at'])) {
+            throw new Exception("Data laporan terhapus tidak ditemukan.");
+        }
+
+        $this->forceDeleteKegiatan($data);
+    }
+
+    public function purgeExpiredDeletedKegiatan(): int
+    {
+        $deleted = 0;
+        $items = $this->laporanKegiatan->findDeletedOlderThan(self::DELETED_RETENTION_DAYS);
+
+        foreach ($items as $item) {
+            $this->forceDeleteKegiatan($item);
+            $deleted++;
+        }
+
+        return $deleted;
+    }
+
+    private function forceDeleteKegiatan(array $data): void
+    {
         if (!empty($data['bukti'])) {
             $this->documentUploadService->delete(
                 $this->uploadDir,
@@ -428,11 +508,9 @@ class LaporanService
             );
         }
 
-        $this->laporanKegiatan->delete($kegiatanId);
-
         $laporanId = (int)$data['laporan_id'];
 
-        $this->laporanHarian->revokeApproval($kegiatanId);
+        $this->laporanKegiatan->forceDelete((int) $data['id']);
 
         $this->refreshKegiatanCount($laporanId);
     }
