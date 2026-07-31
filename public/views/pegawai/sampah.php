@@ -137,6 +137,7 @@ $selectedEnd = (string) ($filter['end'] ?? '');
             <select name="action" id="pegawaiTrashBulkAction" class="form-control" required>
               <option value="">-- Pilih Aksi --</option>
               <option value="restore">Pulihkan</option>
+              <option value="force_delete">Hapus Permanen</option>
             </select>
           </div>
 
@@ -168,6 +169,12 @@ $selectedEnd = (string) ($filter['end'] ?? '');
     if (bulkForm) {
       bulkForm.addEventListener('submit', function(event) {
         var count = selectedCount();
+        var action = document.getElementById('pegawaiTrashBulkAction');
+        var labels = {
+          restore: 'memulihkan',
+          force_delete: 'menghapus permanen'
+        };
+        var actionLabel = labels[action ? action.value : ''] || 'memproses';
 
         if (!count) {
           event.preventDefault();
@@ -175,7 +182,7 @@ $selectedEnd = (string) ($filter['end'] ?? '');
           return;
         }
 
-        if (!confirm('Yakin ingin memulihkan ' + count + ' kegiatan yang dipilih?')) {
+        if (!confirm('Yakin ingin ' + actionLabel + ' ' + count + ' kegiatan yang dipilih?')) {
           event.preventDefault();
         }
       });

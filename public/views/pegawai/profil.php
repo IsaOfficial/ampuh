@@ -11,7 +11,7 @@
 <div class="row">
   <!-- Card Foto -->
   <div class="col-lg-4">
-    <div class="card shadow mb-4">
+    <div class="card shadow mb-4 profile-photo-card">
       <div class="card-body text-center">
 
         <img

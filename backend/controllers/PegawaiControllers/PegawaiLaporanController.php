@@ -212,6 +212,7 @@ class PegawaiLaporanController
                 match ($action) {
                     'delete' => $this->laporanService->deleteKegiatanByPegawai((int) $pegawai['id'], $kegiatanId),
                     'restore' => $this->laporanService->restoreKegiatanByPegawai((int) $pegawai['id'], $kegiatanId),
+                    'force_delete' => $this->laporanService->forceDeleteKegiatanByPegawai((int) $pegawai['id'], $kegiatanId),
                     default => throw new Exception("Aksi bulk tidak valid."),
                 };
                 $processed++;
@@ -228,7 +229,7 @@ class PegawaiLaporanController
             ]);
         }
 
-        $redirect = ($r['action'] ?? '') === 'restore'
+        $redirect = in_array(($r['action'] ?? ''), ['restore', 'force_delete'], true)
             ? '/pegawai/laporan/sampah'
             : '/pegawai/laporan';
 

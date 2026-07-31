@@ -486,6 +486,23 @@ class LaporanService
         $this->forceDeleteKegiatan($data);
     }
 
+    public function forceDeleteKegiatanByPegawai(int $pegawaiId, int $kegiatanId): void
+    {
+        $data = $this->laporanKegiatan->findById($kegiatanId, true);
+
+        if (!$data || empty($data['deleted_at'])) {
+            throw new Exception("Data laporan terhapus tidak ditemukan.");
+        }
+
+        $laporan = $this->laporanHarian->findById((int) $data['laporan_id']);
+
+        if (!$laporan || (int) $laporan['user_id'] !== $pegawaiId) {
+            throw new Exception("Akses tidak diizinkan.");
+        }
+
+        $this->forceDeleteKegiatan($data);
+    }
+
     public function purgeExpiredDeletedKegiatan(): int
     {
         $deleted = 0;

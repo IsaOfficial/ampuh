@@ -12,6 +12,7 @@ $(document).ready(function() {
     $(this).DataTable({
       autoWidth: false,
       deferRender: true,
+      pagingType: 'simple',
       pageLength: 10,
       lengthMenu: [
         [10, 25, 50, 100],

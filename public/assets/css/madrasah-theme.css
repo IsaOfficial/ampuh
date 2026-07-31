@@ -239,6 +239,17 @@
   text-align: center;
 }
 
+.profile-photo-card .profile-img {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.profile-photo-card .card-body,
+.profile-photo-card form,
+.profile-photo-card .form-group {
+  text-align: center;
+}
+
 /* -----------------------------------------------------------
    Table Header Theme
    ----------------------------------------------------------- */
@@ -658,7 +669,22 @@
   .dataTables_wrapper .dataTables_filter,
   .dataTables_wrapper .dataTables_info,
   .dataTables_wrapper .dataTables_paginate {
-    text-align: left !important;
+    text-align: center !important;
+  }
+
+  .dataTables_wrapper .dataTables_length label,
+  .dataTables_wrapper .dataTables_filter label {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .dataTables_wrapper .dataTables_filter input {
+    width: min(100%, 220px);
+    margin-left: 0 !important;
   }
 
   .dataTables_wrapper .dataTables_info {
@@ -669,6 +695,10 @@
 
   .dataTables_wrapper .dataTables_paginate {
     margin-top: 0.75rem;
+  }
+
+  .dataTables_wrapper .dataTables_paginate .pagination {
+    justify-content: center;
   }
 
   .dataTables_wrapper .page-link {
