@@ -55,8 +55,10 @@
       syncSelectAll();
     });
 
-    getCheckboxes(selector).forEach(function(checkbox) {
-      checkbox.addEventListener('change', syncSelectAll);
+    document.addEventListener('change', function(event) {
+      if (event.target && event.target.matches(selector)) {
+        syncSelectAll();
+      }
     });
 
     var table = selectAll.closest('table');

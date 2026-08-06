@@ -1,6 +1,7 @@
 <?php ob_start(); ?>
 <?php
-$hasApprovedReport = !empty(array_filter($laporan ?? [], fn($row) => ($row['status'] ?? 'pending') === 'approved'));
+$serverSideTable = true;
+$hasApprovedReport ??= !empty(array_filter($laporan ?? [], fn($row) => ($row['status'] ?? 'pending') === 'approved'));
 $appTimezone = new DateTimeZone('Asia/Jakarta');
 $today = new DateTimeImmutable('today', $appTimezone);
 $editableLimitDate = $today->modify('-3 days');
@@ -91,7 +92,14 @@ $editableLimitDate = $today->modify('-3 days');
     </div>
 
     <div class="table-responsive">
-      <table class="table table-bordered table-striped" id="dataTable">
+      <table
+        class="table table-bordered table-striped"
+        id="dataTable"
+        data-server-side="true"
+        data-ajax-url="/pegawai/laporan/data"
+        data-order-column="2"
+        data-order-direction="desc"
+        data-order-disabled="0,5,7">
         <thead class="bg-success text-white text-center">
           <tr>
             <th width="30"><input type="checkbox" id="selectAllPegawaiLaporan"> Pilih Semua</th>
@@ -106,6 +114,7 @@ $editableLimitDate = $today->modify('-3 days');
         </thead>
 
         <tbody>
+          <?php if (empty($serverSideTable)): ?>
           <?php if (!empty($laporan)): ?>
             <?php $no = 1;
             foreach ($laporan as $row): ?>
@@ -297,6 +306,7 @@ $editableLimitDate = $today->modify('-3 days');
             <tr>
               <td colspan="8" class="text-center text-muted">Belum ada laporan.</td>
             </tr>
+          <?php endif; ?>
           <?php endif; ?>
 
         </tbody>

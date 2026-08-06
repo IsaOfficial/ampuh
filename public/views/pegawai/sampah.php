@@ -1,6 +1,7 @@
 <?php ob_start(); ?>
 <?php
 $filter = $filter ?? [];
+$serverSideTable = true;
 $selectedStart = (string) ($filter['start'] ?? '');
 $selectedEnd = (string) ($filter['end'] ?? '');
 ?>
@@ -60,7 +61,15 @@ $selectedEnd = (string) ($filter['end'] ?? '');
 
   <div class="card-body">
     <div class="table-responsive">
-      <table class="table table-bordered table-striped" id="dataTable" width="100%">
+      <table
+        class="table table-bordered table-striped"
+        id="dataTable"
+        data-server-side="true"
+        data-ajax-url="/pegawai/laporan/sampah/data"
+        data-order-column="6"
+        data-order-direction="desc"
+        data-order-disabled="0,5,7"
+        width="100%">
         <thead class="bg-warning text-white text-center">
           <tr>
             <th width="30"><input type="checkbox" id="selectAllPegawaiTrash"> Pilih Semua</th>
@@ -74,6 +83,7 @@ $selectedEnd = (string) ($filter['end'] ?? '');
           </tr>
         </thead>
         <tbody>
+          <?php if (empty($serverSideTable)): ?>
           <?php if (!empty($laporan)): ?>
             <?php $no = 1; ?>
             <?php foreach ($laporan as $row): ?>
@@ -125,6 +135,7 @@ $selectedEnd = (string) ($filter['end'] ?? '');
             <tr>
               <td colspan="8" class="text-center text-muted">Tidak ada laporan terhapus.</td>
             </tr>
+          <?php endif; ?>
           <?php endif; ?>
         </tbody>
       </table>

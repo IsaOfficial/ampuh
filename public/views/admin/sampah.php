@@ -1,6 +1,7 @@
 <?php ob_start(); ?>
 <?php
 $filter = $filter ?? [];
+$serverSideTable = true;
 $selectedPegawaiId = (string) ($filter['pegawai_id'] ?? '');
 $selectedStart = (string) ($filter['start'] ?? '');
 $selectedEnd = (string) ($filter['end'] ?? '');
@@ -73,7 +74,15 @@ $selectedEnd = (string) ($filter['end'] ?? '');
 
   <div class="card-body">
     <div class="table-responsive">
-      <table class="table table-bordered table-striped" id="dataTable" width="100%">
+      <table
+        class="table table-bordered table-striped"
+        id="laporanTrashTable"
+        data-server-side="true"
+        data-ajax-url="/admin/kelola/laporan/sampah/data"
+        data-order-column="7"
+        data-order-direction="desc"
+        data-order-disabled="0,6,8"
+        width="100%">
         <thead class="bg-warning text-white text-center">
           <tr>
             <th width="30"><input type="checkbox" id="selectAll"> Pilih Semua</th>
@@ -88,6 +97,7 @@ $selectedEnd = (string) ($filter['end'] ?? '');
           </tr>
         </thead>
         <tbody>
+          <?php if (empty($serverSideTable)): ?>
           <?php if (!empty($laporan)): ?>
             <?php $no = 1; ?>
             <?php foreach ($laporan as $row): ?>
@@ -183,6 +193,7 @@ $selectedEnd = (string) ($filter['end'] ?? '');
               <td colspan="9" class="text-center text-muted">Tidak ada laporan terhapus.</td>
             </tr>
           <?php endif; ?>
+          <?php endif; ?>
         </tbody>
       </table>
 
@@ -216,7 +227,15 @@ $selectedEnd = (string) ($filter['end'] ?? '');
 
   <div class="card-body">
     <div class="table-responsive">
-      <table class="table table-bordered table-striped" width="100%">
+      <table
+        class="table table-bordered table-striped"
+        id="pegawaiTrashTable"
+        data-server-side="true"
+        data-ajax-url="/admin/kelola/pegawai/sampah/data"
+        data-order-column="6"
+        data-order-direction="desc"
+        data-order-disabled="0,2,7"
+        width="100%">
         <thead class="bg-warning text-white text-center">
           <tr>
             <th width="30"><input type="checkbox" id="selectAllDeletedPegawai"> Pilih Semua</th>
@@ -230,6 +249,7 @@ $selectedEnd = (string) ($filter['end'] ?? '');
           </tr>
         </thead>
         <tbody>
+          <?php if (empty($serverSideTable)): ?>
           <?php if (!empty($deletedPegawai)): ?>
             <?php $pegawaiNo = 1; ?>
             <?php foreach ($deletedPegawai as $row): ?>
@@ -309,6 +329,7 @@ $selectedEnd = (string) ($filter['end'] ?? '');
             <tr>
               <td colspan="8" class="text-center text-muted">Tidak ada pegawai terhapus.</td>
             </tr>
+          <?php endif; ?>
           <?php endif; ?>
         </tbody>
       </table>

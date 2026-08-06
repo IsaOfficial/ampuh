@@ -694,11 +694,21 @@
   }
 
   .dataTables_wrapper .dataTables_paginate {
+    display: flex;
+    justify-content: center;
+    width: 100%;
     margin-top: 0.75rem;
+    text-align: center !important;
+    white-space: normal !important;
   }
 
-  .dataTables_wrapper .dataTables_paginate .pagination {
-    justify-content: center;
+  .dataTables_wrapper .dataTables_paginate .pagination,
+  div.dataTables_wrapper div.dataTables_paginate ul.pagination {
+    flex-wrap: wrap;
+    justify-content: center !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    white-space: normal !important;
   }
 
   .dataTables_wrapper .page-link {

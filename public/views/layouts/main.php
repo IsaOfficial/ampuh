@@ -558,9 +558,9 @@
   <script src="/public/assets/vendor/datatables/jquery.dataTables.min.js"></script>
   <script src="/public/assets/vendor/datatables/dataTables.bootstrap4.min.js"></script>
 
-  <script src="/public/assets/js/demo/datatables-demo.js"></script>
-  <script src="/public/assets/js/bulk-actions.js"></script>
-  <script src="/public/assets/js/avatar-fallback.js"></script>
+  <script src="/public/assets/js/demo/datatables-demo.js?v=<?= filemtime(__DIR__ . '/../../assets/js/demo/datatables-demo.js') ?>"></script>
+  <script src="/public/assets/js/bulk-actions.js?v=<?= filemtime(__DIR__ . '/../../assets/js/bulk-actions.js') ?>"></script>
+  <script src="/public/assets/js/avatar-fallback.js?v=<?= filemtime(__DIR__ . '/../../assets/js/avatar-fallback.js') ?>"></script>
 
   <!-- Chart.js -->
   <script src="/public/assets/vendor/chart.js/Chart.min.js"></script>

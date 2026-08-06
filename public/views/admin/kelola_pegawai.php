@@ -1,6 +1,7 @@
 <?php ob_start(); ?>
 <?php
 $filter = $filter ?? [];
+$serverSideTable = true;
 $selectedKeyword = (string) ($filter['keyword'] ?? '');
 $selectedJabatan = (string) ($filter['jabatan'] ?? '');
 $selectedJenisKelamin = (string) ($filter['jenis_kelamin'] ?? '');
@@ -272,6 +273,11 @@ $selectedJenisKelamin = (string) ($filter['jenis_kelamin'] ?? '');
       <table
         class="table table-bordered table-striped"
         id="dataTable"
+        data-server-side="true"
+        data-ajax-url="/admin/kelola/pegawai/data"
+        data-order-column="3"
+        data-order-direction="asc"
+        data-order-disabled="0,2,9"
         width="100%">
         <thead class="bg-success text-white text-center">
           <tr>
@@ -289,6 +295,7 @@ $selectedJenisKelamin = (string) ($filter['jenis_kelamin'] ?? '');
         </thead>
 
         <tbody>
+          <?php if (empty($serverSideTable)): ?>
           <?php if (!empty($pegawai)): ?>
             <?php $no = 1;
             foreach ($pegawai as $row): ?>
@@ -509,6 +516,7 @@ $selectedJenisKelamin = (string) ($filter['jenis_kelamin'] ?? '');
             <tr>
               <td colspan="10" class="text-center">Tidak ada data pegawai</td>
             </tr>
+          <?php endif; ?>
           <?php endif; ?>
         </tbody>
 

@@ -78,6 +78,129 @@ class PegawaiModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    private function buildPegawaiDataConditions(
+        bool $deleted,
+        ?string $keyword = null,
+        ?string $jabatan = null,
+        ?string $jenisKelamin = null,
+        ?string $search = null
+    ): array {
+        $conditions = [
+            "u.role = 'pegawai'",
+            $deleted ? 'u.deleted_at IS NOT NULL' : 'u.deleted_at IS NULL',
+        ];
+        $params = [];
+
+        $keyword = trim((string) $keyword);
+        if ($keyword !== '') {
+            $conditions[] = "(u.nama LIKE :keyword OR u.nip LIKE :keyword OR u.nik LIKE :keyword OR u.jabatan LIKE :keyword OR u.email LIKE :keyword OR u.no_wa LIKE :keyword)";
+            $params['keyword'] = '%' . $keyword . '%';
+        }
+
+        $jabatan = trim((string) $jabatan);
+        if ($jabatan !== '') {
+            $conditions[] = 'u.jabatan = :jabatan';
+            $params['jabatan'] = $jabatan;
+        }
+
+        $jenisKelamin = trim((string) $jenisKelamin);
+        if ($jenisKelamin !== '') {
+            $conditions[] = 'u.jenis_kelamin = :jenis_kelamin';
+            $params['jenis_kelamin'] = $jenisKelamin;
+        }
+
+        $search = trim((string) $search);
+        if ($search !== '') {
+            $searchColumns = ['u.nama', 'u.nip', 'u.nik', 'u.jabatan', 'u.jenis_kelamin', 'u.email', 'u.no_wa'];
+            $searchParts = [];
+            foreach ($searchColumns as $index => $column) {
+                $param = 'search_' . $index;
+                $searchParts[] = "{$column} LIKE :{$param}";
+                $params[$param] = '%' . $search . '%';
+            }
+            $conditions[] = '(' . implode(' OR ', $searchParts) . ')';
+        }
+
+        return [$conditions, $params];
+    }
+
+    private function pegawaiDataFromSql(bool $deleted): string
+    {
+        $sql = " FROM {$this->table} u";
+        if ($deleted) {
+            $sql .= " LEFT JOIN {$this->table} deleted_by_user ON deleted_by_user.id = u.deleted_by";
+        }
+
+        return $sql;
+    }
+
+    public function countPegawaiData(
+        bool $deleted = false,
+        ?string $keyword = null,
+        ?string $jabatan = null,
+        ?string $jenisKelamin = null,
+        ?string $search = null
+    ): int {
+        [$conditions, $params] = $this->buildPegawaiDataConditions($deleted, $keyword, $jabatan, $jenisKelamin, $search);
+        $sql = 'SELECT COUNT(*)' . $this->pegawaiDataFromSql($deleted) . ' WHERE ' . implode(' AND ', $conditions);
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function getPegawaiDataPage(
+        bool $deleted = false,
+        ?string $keyword = null,
+        ?string $jabatan = null,
+        ?string $jenisKelamin = null,
+        ?string $search = null,
+        string $orderColumn = 'u.nama',
+        string $orderDirection = 'ASC',
+        int $offset = 0,
+        int $limit = 10
+    ): array {
+        $allowedOrderColumns = [
+            'u.nama',
+            'u.nip',
+            'u.nik',
+            'u.jabatan',
+            'u.jenis_kelamin',
+            'u.email',
+            'u.no_wa',
+            'u.deleted_at',
+            'u.id',
+        ];
+
+        if (!in_array($orderColumn, $allowedOrderColumns, true)) {
+            $orderColumn = $deleted ? 'u.deleted_at' : 'u.nama';
+        }
+
+        $orderDirection = strtoupper($orderDirection) === 'DESC' ? 'DESC' : 'ASC';
+        $offset = max(0, $offset);
+        $limit = max(1, min(100, $limit));
+
+        $select = $deleted
+            ? 'SELECT u.*, deleted_by_user.nama AS deleted_by_name'
+            : 'SELECT u.*';
+        [$conditions, $params] = $this->buildPegawaiDataConditions($deleted, $keyword, $jabatan, $jenisKelamin, $search);
+        $sql = $select
+            . $this->pegawaiDataFromSql($deleted)
+            . ' WHERE ' . implode(' AND ', $conditions)
+            . " ORDER BY {$orderColumn} {$orderDirection}, u.id DESC LIMIT :limit OFFSET :offset";
+
+        $stmt = $this->db->prepare($sql);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue(':' . $key, $value);
+        }
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function findPegawaiById(int $id, bool $includeDeleted = false): ?array
     {
         $sql = "SELECT * FROM {$this->table} WHERE id = :id AND role = 'pegawai'";

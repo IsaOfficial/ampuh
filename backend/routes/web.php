@@ -30,7 +30,9 @@ $router->group('/pegawai', function ($r) {
 
     // Laporan
     $r->get('/laporan', [PegawaiLaporanController::class, 'riwayatLaporan']);
+    $r->get('/laporan/data', [PegawaiLaporanController::class, 'data']);
     $r->get('/laporan/sampah', [PegawaiLaporanController::class, 'sampahLaporan']);
+    $r->get('/laporan/sampah/data', [PegawaiLaporanController::class, 'trashData']);
     $r->post('/laporan/store', [PegawaiLaporanController::class, 'create']);
     $r->post('/laporan/update', [PegawaiLaporanController::class, 'update']);
     $r->post('/laporan/delete', [PegawaiLaporanController::class, 'delete']);
@@ -58,7 +60,9 @@ $router->group('/admin', function ($r) {
 
     // Kelola Laporan
     $r->get('/kelola/laporan', [AdminLaporanController::class, 'kelolaLaporan']);
+    $r->get('/kelola/laporan/data', [AdminLaporanController::class, 'data']);
     $r->get('/kelola/laporan/sampah', [AdminLaporanController::class, 'sampahLaporan']);
+    $r->get('/kelola/laporan/sampah/data', [AdminLaporanController::class, 'trashData']);
     $r->post('/kelola/laporan/create', [AdminLaporanController::class, 'create']);
     $r->post('/kelola/laporan/update', [AdminLaporanController::class, 'update']);
     $r->post('/kelola/laporan/delete', [AdminLaporanController::class, 'delete']);
@@ -72,6 +76,8 @@ $router->group('/admin', function ($r) {
 
     // Kelola Pegawai
     $r->get('/kelola/pegawai', [AdminPegawaiController::class, 'kelolaPegawai']);
+    $r->get('/kelola/pegawai/data', [AdminPegawaiController::class, 'data']);
+    $r->get('/kelola/pegawai/sampah/data', [AdminPegawaiController::class, 'trashData']);
     $r->post('/kelola/pegawai/create', [AdminPegawaiController::class, 'create']);
     $r->post('/kelola/pegawai/update', [AdminPegawaiController::class, 'update']);
     $r->post('/kelola/pegawai/delete', [AdminPegawaiController::class, 'delete']);
