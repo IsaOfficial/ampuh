@@ -102,14 +102,28 @@ class PegawaiProfileValidator
             self::email($data['email']);
         }
 
-        if (!empty($data['password'])) {
-            self::password($data['password']);
-        }
-
         self::gender($data['jenis_kelamin'] ?? null);
         self::phone($data['no_wa'] ?? null);
 
         return self::normalize($data);
+    }
+
+    public static function validatePasswordUpdate(array $data): string
+    {
+        $password = (string) ($data['password'] ?? '');
+        $confirmation = (string) ($data['password_confirmation'] ?? '');
+
+        if ($password === '' || $confirmation === '') {
+            throw new Exception("Password baru dan konfirmasi password wajib diisi.");
+        }
+
+        self::password($password);
+
+        if (!hash_equals($password, $confirmation)) {
+            throw new Exception("Konfirmasi password baru tidak sama.");
+        }
+
+        return $password;
     }
 
     /* =========================
@@ -160,7 +174,6 @@ class PegawaiProfileValidator
         return [
             'nama'          => self::normalizeName($data['nama']),
             'email'         => trim($data['email'] ?? null),
-            'password'      => $data['password'] ?? null,
             'jenis_kelamin' => $data['jenis_kelamin'] ?? 'Tidak diketahui',
             'no_wa'         => trim($data['no_wa'] ?? null),
         ];

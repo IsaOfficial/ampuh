@@ -36,4 +36,21 @@ class PegawaiController
             'pegawai' => $pegawai,
         ]);
     }
+
+    public function todayReportStatus(): void
+    {
+        $pegawai = $this->authService->pegawai();
+        $tanggal = (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta')))->format('Y-m-d');
+        $sudahLapor = $this->laporanHarian->hasSubmittedToday((int) $pegawai['id']);
+
+        header('Content-Type: application/json; charset=utf-8');
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+        echo json_encode([
+            'authenticated' => true,
+            'role' => 'pegawai',
+            'tanggal' => $tanggal,
+            'sudah_lapor' => $sudahLapor,
+            'nama' => $pegawai['nama'] ?? '',
+        ], JSON_INVALID_UTF8_SUBSTITUTE);
+    }
 }

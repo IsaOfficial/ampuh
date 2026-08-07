@@ -14,13 +14,13 @@ $selectedEnd = (string) ($filter['end'] ?? '');
   </a> -->
 </div>
 
-<div class="alert alert-warning shadow-sm">
+<div class="alert alert-danger shadow-sm">
   Laporan di halaman ini akan otomatis dihapus permanen setelah lebih dari 14 hari. Pegawai terhapus dapat dipulihkan, dan hanya dapat dihapus permanen jika belum memiliki riwayat laporan.
 </div>
 
-<div class="card shadow mb-4 border-left-warning">
+<div class="card shadow mb-4 border-left-danger">
   <div class="card-header py-3">
-    <h6 class="m-0 font-weight-bold text-warning">Filter Sampah Laporan</h6>
+    <h6 class="m-0 font-weight-bold text-danger">Filter Sampah Laporan</h6>
   </div>
 
   <div class="card-body">
@@ -67,15 +67,15 @@ $selectedEnd = (string) ($filter['end'] ?? '');
   </div>
 <?php endif; ?>
 
-<div class="card shadow mb-4 border-left-warning">
+<div class="card shadow mb-4 border-left-danger">
   <div class="card-header py-3">
-    <h6 class="m-0 font-weight-bold text-warning">Daftar Laporan Terhapus</h6>
+    <h6 class="m-0 font-weight-bold text-danger">Daftar Laporan Terhapus</h6>
   </div>
 
   <div class="card-body">
     <div class="table-responsive">
       <table
-        class="table table-bordered table-striped"
+        class="table table-bordered table-striped table-trash-theme"
         id="laporanTrashTable"
         data-server-side="true"
         data-ajax-url="/admin/kelola/laporan/sampah/data"
@@ -83,7 +83,7 @@ $selectedEnd = (string) ($filter['end'] ?? '');
         data-order-direction="desc"
         data-order-disabled="0,6,8"
         width="100%">
-        <thead class="bg-warning text-white text-center">
+        <thead class="bg-danger text-white text-center">
           <tr>
             <th width="30"><input type="checkbox" id="selectAll"> Pilih Semua</th>
             <th>No</th>
@@ -210,7 +210,7 @@ $selectedEnd = (string) ($filter['end'] ?? '');
           </div>
 
           <div class="bulk-action-submit">
-            <button type="submit" class="btn btn-warning">
+            <button type="submit" class="btn btn-danger">
               <i class="fas fa-check-double"></i> &nbsp Jalankan
             </button>
           </div>
@@ -220,15 +220,15 @@ $selectedEnd = (string) ($filter['end'] ?? '');
   </div>
 </div>
 
-<div class="card shadow mb-4 border-left-warning">
+<div class="card shadow mb-4 border-left-danger">
   <div class="card-header py-3">
-    <h6 class="m-0 font-weight-bold text-warning">Daftar Pegawai Terhapus</h6>
+    <h6 class="m-0 font-weight-bold text-danger">Daftar Pegawai Terhapus</h6>
   </div>
 
   <div class="card-body">
     <div class="table-responsive">
       <table
-        class="table table-bordered table-striped"
+        class="table table-bordered table-striped table-trash-theme"
         id="pegawaiTrashTable"
         data-server-side="true"
         data-ajax-url="/admin/kelola/pegawai/sampah/data"
@@ -236,7 +236,7 @@ $selectedEnd = (string) ($filter['end'] ?? '');
         data-order-direction="desc"
         data-order-disabled="0,2,7"
         width="100%">
-        <thead class="bg-warning text-white text-center">
+        <thead class="bg-danger text-white text-center">
           <tr>
             <th width="30"><input type="checkbox" id="selectAllDeletedPegawai"> Pilih Semua</th>
             <th>No</th>
@@ -347,7 +347,7 @@ $selectedEnd = (string) ($filter['end'] ?? '');
           </div>
 
           <div class="bulk-action-submit">
-            <button type="submit" class="btn btn-warning">
+            <button type="submit" class="btn btn-danger">
               <i class="fas fa-check-double"></i> &nbsp Jalankan
             </button>
           </div>

@@ -27,6 +27,7 @@ $router->group('/pegawai', function ($r) {
 
     // Dashboard
     $r->get('/dashboard', [PegawaiController::class, 'dashboard']);
+    $r->get('/laporan/status-hari-ini', [PegawaiController::class, 'todayReportStatus']);
 
     // Laporan
     $r->get('/laporan', [PegawaiLaporanController::class, 'riwayatLaporan']);
@@ -46,6 +47,7 @@ $router->group('/pegawai', function ($r) {
     // Profil
     $r->get('/profil', [PegawaiProfilController::class, 'profil']);
     $r->post('/profil/update', [PegawaiProfilController::class, 'updateProfil']);
+    $r->post('/profil/update-password', [PegawaiProfilController::class, 'updatePassword']);
     $r->post('/profil/update-foto', [PegawaiProfilController::class, 'updateFoto']);
 }, ['auth', 'role:pegawai', 'csrf']);
 
@@ -84,6 +86,13 @@ $router->group('/admin', function ($r) {
     $r->post('/kelola/pegawai/restore', [AdminPegawaiController::class, 'restore']);
     $r->post('/kelola/pegawai/force-delete', [AdminPegawaiController::class, 'forceDelete']);
     $r->post('/kelola/pegawai/bulk-process', [AdminPegawaiController::class, 'bulkProcess']);
+
+    // Kelola Jabatan
+    $r->get('/kelola/jabatan', [AdminJabatanController::class, 'index']);
+    $r->post('/kelola/jabatan/store', [AdminJabatanController::class, 'store']);
+    $r->post('/kelola/jabatan/update', [AdminJabatanController::class, 'update']);
+    $r->post('/kelola/jabatan/toggle', [AdminJabatanController::class, 'toggle']);
+    $r->post('/kelola/jabatan/delete', [AdminJabatanController::class, 'delete']);
 
     // Export Pegawai
     $r->get('/kelola/pegawai/export/pdf', [AdminPegawaiExportController::class, 'exportPdf']);

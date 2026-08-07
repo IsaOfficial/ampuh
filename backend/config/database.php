@@ -24,12 +24,7 @@ class Database
                 PDO::ATTR_EMULATE_PREPARES   => false,
             ];
 
-            try {
-                self::$conn = new PDO($dsn, $user, $pass, $options);
-            } catch (PDOException $e) {
-                error_log('Database connection failed: ' . $e->getMessage());
-                die('Koneksi database gagal.');
-            }
+            self::$conn = new PDO($dsn, $user, $pass, $options);
         }
 
         return self::$conn;

@@ -198,8 +198,8 @@ $selectedJenisKelamin = (string) ($filter['jenis_kelamin'] ?? '');
                   <select name="jabatan" class="form-control" required>
                     <option value="">-- Pilih Jabatan --</option>
                     <?php foreach (JabatanHelper::list() as $jabatan): ?>
-                      <option value="<?= $jabatan ?>">
-                        <?= $jabatan ?>
+                      <option value="<?= htmlspecialchars($jabatan) ?>">
+                        <?= htmlspecialchars($jabatan) ?>
                       </option>
                     <?php endforeach; ?>
                   </select>
@@ -412,10 +412,10 @@ $selectedJenisKelamin = (string) ($filter['jenis_kelamin'] ?? '');
                                 <label class="form-label">Jabatan<span class="text-danger"> *</span></label>
                                 <select name="jabatan" class="form-control" required>
                                   <option value="">-- Pilih Jabatan --</option>
-                                  <?php foreach (JabatanHelper::list() as $jabatan): ?>
-                                    <option value="<?= $jabatan ?>"
+                                  <?php foreach (JabatanHelper::listForSelection($row['jabatan'] ?? '') as $jabatan): ?>
+                                    <option value="<?= htmlspecialchars($jabatan) ?>"
                                       <?= ($jabatan === $row['jabatan']) ? 'selected' : '' ?>>
-                                      <?= $jabatan ?>
+                                      <?= htmlspecialchars($jabatan) ?>
                                     </option>
                                   <?php endforeach; ?>
                                 </select>

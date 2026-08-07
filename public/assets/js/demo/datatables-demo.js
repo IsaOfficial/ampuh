@@ -32,6 +32,28 @@ $(document).ready(function() {
 
     $table.closest('.table-responsive').addClass('datatable-responsive-shell');
 
+    var defaultOrderColumn = parseInt($table.attr('data-order-column') || '2', 10);
+    var defaultOrderDirection = $table.attr('data-order-direction') || 'desc';
+    var disabledColumns = ($table.attr('data-order-disabled') || '')
+      .split(',')
+      .map(function(value) {
+        return parseInt(value.trim(), 10);
+      })
+      .filter(function(value) {
+        return !isNaN(value);
+      });
+
+    options.order = [
+      [defaultOrderColumn, defaultOrderDirection]
+    ];
+
+    if (disabledColumns.length) {
+      options.columnDefs = [{
+        targets: disabledColumns,
+        orderable: false
+      }];
+    }
+
     if (isServerSide && ajaxUrl) {
       options.processing = true;
       options.serverSide = true;
@@ -51,30 +73,12 @@ $(document).ready(function() {
           console.error('DataTables AJAX error:', error, thrown, xhr.responseText);
         }
       };
-
-      var defaultOrderColumn = parseInt($table.attr('data-order-column') || '2', 10);
-      var defaultOrderDirection = $table.attr('data-order-direction') || 'desc';
-      var disabledColumns = ($table.attr('data-order-disabled') || '')
-        .split(',')
-        .map(function(value) {
-          return parseInt(value.trim(), 10);
-        })
-        .filter(function(value) {
-          return !isNaN(value);
-        });
-
-      options.order = [
-        [defaultOrderColumn, defaultOrderDirection]
-      ];
-
-      if (disabledColumns.length) {
-        options.columnDefs = [{
-          targets: disabledColumns,
-          orderable: false
-        }];
-      }
     }
 
-    $table.DataTable(options);
+    var dataTable = $table.DataTable(options);
+
+    if ($table.hasClass('table-trash-theme')) {
+      $(dataTable.table().container()).addClass('datatable-trash-theme');
+    }
   });
 });

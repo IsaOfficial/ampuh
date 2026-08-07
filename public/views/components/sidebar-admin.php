@@ -41,6 +41,13 @@
     </a>
   </li>
 
+  <li class="nav-item">
+    <a class="nav-link" href="/admin/kelola/jabatan">
+      <i class="fas fa-id-badge"></i>
+      <span>Kelola Jabatan</span>
+    </a>
+  </li>
+
   <hr class="sidebar-divider" />
 
   <li class="nav-item">

@@ -86,4 +86,34 @@ class PegawaiProfilController
         header('Location: /pegawai/profil');
         exit;
     }
+
+    public function updatePassword(): void
+    {
+        try {
+            $pegawai = $this->authService->pegawai();
+
+            $this->pegawaiService->updatePassword(
+                (int) $pegawai['id'],
+                $_POST
+            );
+
+            Session::remove('user');
+            Session::regenerate();
+            Session::flash('flash', [
+                'type'    => 'success',
+                'message' => 'Password berhasil diperbarui. Silakan login ulang menggunakan password baru.'
+            ]);
+
+            header('Location: /login');
+            exit;
+        } catch (Throwable $e) {
+            Session::flash('flash', [
+                'type'    => 'danger',
+                'message' => $e->getMessage()
+            ]);
+        }
+
+        header('Location: /pegawai/profil');
+        exit;
+    }
 }

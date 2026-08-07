@@ -109,8 +109,7 @@ class Router
             return $handler($request, ...$matches);
         }
 
-        http_response_code(404);
-        echo '404 Not Found';
+        ErrorPage::notFound();
     }
 
     private function runMiddleware(string $middleware)

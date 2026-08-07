@@ -8,18 +8,15 @@ $selectedEnd = (string) ($filter['end'] ?? '');
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h4 mb-0 text-gray-800">Sampah Laporan</h1>
-  <a href="/pegawai/laporan" class="btn btn-sm btn-secondary">
-    <i class="fas fa-arrow-left"></i> Riwayat Laporan
-  </a>
 </div>
 
-<div class="alert alert-warning shadow-sm">
+<div class="alert alert-danger shadow-sm">
   Laporan di halaman ini dapat dipulihkan selama belum otomatis dihapus permanen setelah lebih dari 14 hari.
 </div>
 
-<div class="card shadow mb-4 border-left-warning">
+<div class="card shadow mb-4 border-left-danger">
   <div class="card-header py-3">
-    <h6 class="m-0 font-weight-bold text-warning">Filter Sampah Laporan</h6>
+    <h6 class="m-0 font-weight-bold text-danger">Filter Sampah Laporan</h6>
   </div>
 
   <div class="card-body">
@@ -54,23 +51,23 @@ $selectedEnd = (string) ($filter['end'] ?? '');
   </div>
 <?php endif; ?>
 
-<div class="card shadow mb-4 border-left-warning">
+<div class="card shadow mb-4 border-left-danger">
   <div class="card-header py-3">
-    <h6 class="m-0 font-weight-bold text-warning">Daftar Laporan Terhapus</h6>
+    <h6 class="m-0 font-weight-bold text-danger">Daftar Laporan Terhapus</h6>
   </div>
 
   <div class="card-body">
     <div class="table-responsive">
       <table
-        class="table table-bordered table-striped"
-        id="dataTable"
+        class="table table-bordered table-striped table-trash-theme"
+        id="pegawaiLaporanTrashTable"
         data-server-side="true"
         data-ajax-url="/pegawai/laporan/sampah/data"
         data-order-column="6"
         data-order-direction="desc"
         data-order-disabled="0,5,7"
         width="100%">
-        <thead class="bg-warning text-white text-center">
+        <thead class="bg-danger text-white text-center">
           <tr>
             <th width="30"><input type="checkbox" id="selectAllPegawaiTrash"> Pilih Semua</th>
             <th>No</th>
@@ -153,7 +150,7 @@ $selectedEnd = (string) ($filter['end'] ?? '');
           </div>
 
           <div class="bulk-action-submit">
-            <button type="submit" class="btn btn-warning">
+            <button type="submit" class="btn btn-danger">
               <i class="fas fa-check-double"></i> &nbsp Jalankan
             </button>
           </div>

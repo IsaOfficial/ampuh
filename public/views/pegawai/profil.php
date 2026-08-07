@@ -9,11 +9,9 @@
 <?php endif; ?>
 
 <div class="row">
-  <!-- Card Foto -->
   <div class="col-lg-4">
     <div class="card shadow mb-4 profile-photo-card">
       <div class="card-body text-center">
-
         <img
           src="<?= !empty($pegawai['foto']) && $pegawai['foto'] !== 'default_profile.svg' ? '/public/uploads/foto/' . $pegawai['foto'] : '/public/assets/img/avatars/default_profile.svg' ?>"
           class="profile-img mb-3"
@@ -21,9 +19,8 @@
 
         <form action="/pegawai/profil/update-foto" method="POST" enctype="multipart/form-data" id="formFoto">
           <?= Csrf::input() ?>
-          <input type="hidden" name="id" value="<?= $pegawai['id']; ?>">
+          <input type="hidden" name="id" value="<?= (int) $pegawai['id']; ?>">
 
-          <!-- Input file disembunyikan -->
           <input
             type="file"
             name="foto"
@@ -49,47 +46,82 @@
     </div>
   </div>
 
-  <!-- Form Edit Profil -->
   <div class="col-lg-8">
     <div class="card shadow mb-4">
       <div class="card-header py-3 bg-madrasah">
-        <h6 class="m-0 font-weight-bold text-white">Edit Profil</h6>
+        <h6 class="m-0 font-weight-bold text-white">Edit Biodata</h6>
       </div>
 
       <div class="card-body">
-        <form action="/pegawai/profil/update" method="POST" enctype="multipart/form-data" autocomplete="off">
+        <form action="/pegawai/profil/update" method="POST" autocomplete="off">
           <?= Csrf::input() ?>
-          <input type="hidden" name="id" value="<?= $pegawai['id']; ?>">
+          <input type="hidden" name="id" value="<?= (int) $pegawai['id']; ?>">
 
           <div class="form-group">
             <label for="nama">Nama Lengkap (Beserta Gelar)<span class="text-danger"> *</span></label>
-            <input type="text" class="form-control"
+            <input
+              type="text"
+              class="form-control"
               name="nama"
               id="nama"
-              value="<?= htmlspecialchars($pegawai['nama']); ?>" required />
+              value="<?= htmlspecialchars($pegawai['nama']); ?>"
+              required />
           </div>
 
           <div class="form-group">
             <label for="nip">NIP</label>
-            <input type="text" class="form-control"
+            <input
+              type="text"
+              class="form-control"
               name="nip"
               id="nip"
-              value="<?= $pegawai['nip'] ? htmlspecialchars($pegawai['nip']) : '-'; ?>" readonly />
+              value="<?= $pegawai['nip'] ? htmlspecialchars($pegawai['nip']) : '-'; ?>"
+              readonly />
+            <small class="form-text text-muted">Dapat diedit melalui admin.</small>
           </div>
 
           <div class="form-group">
             <label for="nik">NIK<span class="text-danger"> *</span></label>
-            <input type="text" class="form-control"
+            <input
+              type="text"
+              class="form-control"
               name="nik"
               id="nik"
-              value="<?= htmlspecialchars($pegawai['nik']); ?>" readonly />
+              value="<?= htmlspecialchars($pegawai['nik']); ?>"
+              readonly />
+            <small class="form-text text-muted">Dapat diedit melalui admin.</small>
           </div>
 
           <div class="form-group">
             <label for="jabatan">Jabatan<span class="text-danger"> *</span></label>
-            <input type="text" id="jabatan" class="form-control"
+            <input
+              type="text"
+              id="jabatan"
+              class="form-control"
               name="jabatan"
-              value="<?= htmlspecialchars($pegawai['jabatan']); ?>" readonly />
+              value="<?= htmlspecialchars($pegawai['jabatan']); ?>"
+              readonly />
+            <small class="form-text text-muted">Dapat diedit melalui admin.</small>
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              class="form-control"
+              name="email"
+              value="<?= $pegawai['email'] ? htmlspecialchars($pegawai['email']) : ''; ?>" />
+          </div>
+
+          <div class="form-group">
+            <label for="no_wa">No Whatsapp</label>
+            <input
+              type="text"
+              class="form-control"
+              name="no_wa"
+              id="no_wa"
+              value="<?= $pegawai['no_wa'] ? htmlspecialchars($pegawai['no_wa']) : ''; ?>" />
           </div>
 
           <div class="form-group">
@@ -101,8 +133,26 @@
             </select>
           </div>
 
+          <div class="d-flex justify-content-center mt-4">
+            <button type="submit" class="btn btn-madrasah">
+              <i class="fas fa-save"></i> Simpan Perubahan
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card shadow mb-4">
+      <div class="card-header py-3 bg-madrasah">
+        <h6 class="m-0 font-weight-bold text-white">Perbarui Login Password</h6>
+      </div>
+
+      <div class="card-body">
+        <form action="/pegawai/profil/update-password" method="POST" autocomplete="off">
+          <?= Csrf::input() ?>
+
           <div class="form-group">
-            <label for="passwordEdit">Ubah Login Password</label>
+            <label for="passwordEdit">Password Baru<span class="text-danger"> *</span></label>
             <div class="input-group password-group">
               <input
                 type="password"
@@ -110,12 +160,10 @@
                 name="password"
                 class="form-control"
                 autocomplete="new-password"
-                placeholder="(Kosongkan jika tidak diubah)" />
+                placeholder="Minimal 6 karakter"
+                required />
               <div class="input-group-append">
-                <button
-                  class="btn btn-secondary"
-                  type="button"
-                  onclick="togglePassword('passwordEdit', this)">
+                <button class="btn btn-secondary" type="button" onclick="togglePassword('passwordEdit', this)">
                   <i class="fas fa-eye"></i>
                 </button>
               </div>
@@ -123,26 +171,29 @@
           </div>
 
           <div class="form-group">
-            <label for="email">Email</label>
-            <input type="email" id="email" class="form-control"
-              name="email"
-              value="<?= $pegawai['email'] ? htmlspecialchars($pegawai['email']) : ''; ?>" />
-          </div>
-
-          <div class="form-group">
-            <label for="no_wa">No Whatsapp</label>
-            <input type="text" class="form-control"
-              name="no_wa"
-              id="no_wa"
-              value="<?= $pegawai['no_wa'] ? htmlspecialchars($pegawai['no_wa']) : ''; ?>" />
+            <label for="passwordConfirmationEdit">Konfirmasi Password Baru<span class="text-danger"> *</span></label>
+            <div class="input-group password-group">
+              <input
+                type="password"
+                id="passwordConfirmationEdit"
+                name="password_confirmation"
+                class="form-control"
+                autocomplete="new-password"
+                placeholder="Ulangi password baru"
+                required />
+              <div class="input-group-append">
+                <button class="btn btn-secondary" type="button" onclick="togglePassword('passwordConfirmationEdit', this)">
+                  <i class="fas fa-eye"></i>
+                </button>
+              </div>
+            </div>
           </div>
 
           <div class="d-flex justify-content-center mt-4">
             <button type="submit" class="btn btn-madrasah">
-              <i class="fas fa-save"></i> Simpan Perubahan
+              <i class="fas fa-save"></i> Simpan Password
             </button>
           </div>
-
         </form>
       </div>
     </div>

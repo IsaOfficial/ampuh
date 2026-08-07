@@ -56,4 +56,18 @@ class PegawaiService
             'foto' => $fotoBaru
         ]);
     }
+
+    public function updatePassword(int $pegawaiId, array $input): void
+    {
+        $pegawai = $this->pegawaiModel->findPegawaiById($pegawaiId);
+        if (!$pegawai) {
+            throw new Exception("Pegawai tidak ditemukan.");
+        }
+
+        $password = PegawaiProfileValidator::validatePasswordUpdate($input);
+
+        $this->pegawaiModel->update($pegawaiId, [
+            'password' => password_hash($password, PASSWORD_DEFAULT),
+        ]);
+    }
 }

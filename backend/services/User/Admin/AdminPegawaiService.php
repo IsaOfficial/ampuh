@@ -12,6 +12,7 @@ class AdminPegawaiService
     {
         // 1. Validasi & normalisasi
         $data = PegawaiValidator::validateCreate($input);
+        $this->ensureJabatanAllowed($data['jabatan'] ?? null);
 
         // 2. Cek duplikat (domain rule)
         if ($this->pegawaiModel->existsByNik($data['nik'])) {
@@ -48,6 +49,7 @@ class AdminPegawaiService
 
         // 1. Validasi & normalisasi input teks
         $data = PegawaiValidator::validateUpdate($input);
+        $this->ensureJabatanAllowed($data['jabatan'] ?? null, $pegawai['jabatan'] ?? null);
 
         // 2. Cek duplikat (jika berubah)
         if (!empty($data['nik']) && $data['nik'] !== $pegawai['nik']) {
@@ -193,5 +195,23 @@ class AdminPegawaiService
     public function getAll(?string $keyword = null, ?string $jabatan = null, ?string $jenisKelamin = null): array
     {
         return $this->pegawaiModel->getAllPegawai($keyword, $jabatan, $jenisKelamin);
+    }
+
+    private function ensureJabatanAllowed(?string $jabatan, ?string $currentJabatan = null): void
+    {
+        $jabatan = trim((string) $jabatan);
+        $currentJabatan = trim((string) $currentJabatan);
+
+        if ($jabatan === '') {
+            return;
+        }
+
+        if ($currentJabatan !== '' && $jabatan === $currentJabatan) {
+            return;
+        }
+
+        if (!in_array($jabatan, JabatanHelper::list(true), true)) {
+            throw new Exception("Jabatan tidak aktif atau belum terdaftar. Tambahkan melalui menu Kelola Jabatan terlebih dahulu.");
+        }
     }
 }

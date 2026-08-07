@@ -10,6 +10,7 @@ require_once __DIR__ . '/../services/Upload/DocumentUploadService.php';
 // Admin services
 require_once __DIR__ . '/../services/User/Admin/AdminPegawaiService.php';
 require_once __DIR__ . '/../services/User/Admin/AdminPegawaiImportService.php';
+require_once __DIR__ . '/../services/User/Admin/AdminJabatanService.php';
 require_once __DIR__ . '/../services/User/Admin/PegawaiValidator.php';
 
 // Pegawai services

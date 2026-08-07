@@ -1,2 +1,6 @@
 /build/
 /debug.keystore
+/keystore/
+/playstore/
+/tools/
+/release-signing.properties

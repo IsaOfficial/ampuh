@@ -17,3 +17,4 @@ require_once __DIR__ . '/../controllers/AdminControllers/AdminLaporanExportContr
 require_once __DIR__ . '/../controllers/AdminControllers/AdminPegawaiController.php';
 require_once __DIR__ . '/../controllers/AdminControllers/AdminPegawaiExportController.php';
 require_once __DIR__ . '/../controllers/AdminControllers/AdminPegawaiImportController.php';
+require_once __DIR__ . '/../controllers/AdminControllers/AdminJabatanController.php';

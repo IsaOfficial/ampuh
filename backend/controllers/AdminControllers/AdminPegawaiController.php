@@ -264,7 +264,7 @@ class AdminPegawaiController
             : '/public/assets/img/avatars/default_profile.svg';
         $jabatanOptions = '<option value="">-- Pilih Jabatan --</option>';
 
-        foreach (JabatanHelper::list() as $jabatan) {
+        foreach (JabatanHelper::listForSelection($row['jabatan'] ?? '') as $jabatan) {
             $selected = $jabatan === ($row['jabatan'] ?? '') ? ' selected' : '';
             $jabatanOptions .= '<option value="' . $this->h($jabatan) . '"' . $selected . '>' . $this->h($jabatan) . '</option>';
         }
