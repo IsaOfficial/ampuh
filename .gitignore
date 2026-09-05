@@ -34,7 +34,6 @@ Thumbs.db
 # Portfolio/export archives
 /public/assets/img/fitur/
 /public/assets/img/fitur.zip
-/public/assets/img/screenshoots/
 *.aab
 *.apk
 *.jks

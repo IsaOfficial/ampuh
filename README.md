@@ -29,9 +29,21 @@ Repository ini disiapkan sebagai portofolio/source code. Data production, kreden
 
 ## Preview
 
-![AMPUH Showcase](docs/assets/ampuh-showcase.svg)
+| Login Web | Login Mobile |
+| --- | --- |
+| ![Login Web](public/assets/img/screenshoots/desktop/login_page.png) | ![Login Mobile](public/assets/img/screenshoots/mobile/login_page.jpeg) |
 
-Screenshot production tidak disertakan untuk menjaga data pegawai dan bukti laporan tetap privat.
+| Dashboard Admin | Dashboard Pegawai |
+| --- | --- |
+| ![Dashboard Admin](public/assets/img/screenshoots/mobile/dashboard_admin.jpeg) | ![Dashboard Pegawai](public/assets/img/screenshoots/mobile/dashboard_pegawai.jpeg) |
+
+| Kelola Pegawai | Riwayat Laporan |
+| --- | --- |
+| ![Kelola Pegawai](public/assets/img/screenshoots/mobile/kelola_pegawai.jpeg) | ![Riwayat Laporan](public/assets/img/screenshoots/mobile/riwayat_laporan.jpeg) |
+
+| Ekspor Pegawai | Edit Profil |
+| --- | --- |
+| ![Ekspor Pegawai](public/assets/img/screenshoots/mobile/ekspor_pegawai.jpeg) | ![Edit Profil](public/assets/img/screenshoots/mobile/edit_profil.jpeg) |
 
 ## Teknologi
 
@@ -99,43 +111,11 @@ DB_CHARSET=utf8mb4
 SESSION_LIFETIME_DAYS=30
 ```
 
-## Android WebView
+## Aplikasi Android
 
-Source Android ada di:
+AMPUH tersedia sebagai aplikasi Android di Google Play:
 
-```text
-mobile/android-webview
-```
-
-Build APK debug:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\mobile\android-webview\build-apk.ps1
-```
-
-Build AAB release:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\mobile\android-webview\build-playstore.ps1
-```
-
-File signing key dan hasil build release tidak boleh dipublikasikan ke repository.
-
-## Keamanan Data
-
-Checklist publikasi repository tersedia di [docs/PORTFOLIO_CHECKLIST.md](docs/PORTFOLIO_CHECKLIST.md). Kebijakan keamanan tersedia di [SECURITY.md](SECURITY.md).
-
-Jangan commit file berikut ke repository publik:
-
-- `.env`
-- dump database production
-- folder upload production
-- file APK/AAB release
-- Android keystore dan signing properties
-- backup zip atau arsip deploy
-- screenshot yang memuat data pribadi pegawai
-
-Jika file sensitif pernah ter-commit, hapus dari history Git menggunakan `git filter-repo` atau BFG, lalu rotasi semua credential yang terdampak.
+[Install AMPUH di Google Play](https://play.google.com/store/apps/details?id=matsantura.ampuh)
 
 ## Status Proyek
 
