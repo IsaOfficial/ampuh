@@ -85,7 +85,7 @@ $oldCreateInput = Session::getFlash('old_pegawai_laporan_create') ?: [];
                       <input type="file" name="bukti[]" class="custom-file-input evidence-file-input" accept="image/*,application/pdf,video/*" required>
                       <label class="custom-file-label evidence-file-label" data-browse="Pilih"><i class="fas fa-paperclip mr-1"></i><span>Unggah bukti</span></label>
                     </div>
-                    <small class="evidence-upload-hint">Gambar/PDF maks. 5MB, video maks. 50MB</small>
+                    <small class="evidence-upload-hint">Format bukti: gambar, PDF, atau video.</small>
         </div>
 
         <div

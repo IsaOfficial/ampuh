@@ -164,7 +164,7 @@ $Manifest = Join-Path $Src 'AndroidManifest.xml'
 $BaseModuleZip = Join-Path $Bundle 'base.zip'
 $BundleModuleZip = Join-Path $Bundle 'base-module.zip'
 $UnsignedAab = Join-Path $Bundle 'AMPUH-release-unsigned.aab'
-$SignedAab = Join-Path $PlaystoreDir 'AMPUH-release-v1.0.1-code2.aab'
+$SignedAab = Join-Path $PlaystoreDir 'AMPUH-release-v1.0.3-code13.aab'
 
 Invoke-BuildCommand $Aapt2 @('compile', '--dir', (Join-Path $Src 'res'), '-o', $CompiledRes)
 Invoke-BuildCommand $Aapt2 @('link', '--proto-format', '-o', $BaseModuleZip, '-I', $AndroidJar, '--manifest', $Manifest, '--java', $Generated, '--auto-add-overlay', $CompiledRes)

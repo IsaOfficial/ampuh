@@ -1,4 +1,4 @@
-package ampuh.mtsn1jepara;
+package matsantura.ampuh;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
@@ -9,7 +9,7 @@ import android.os.Build;
 import java.util.Calendar;
 
 public final class ReminderScheduler {
-    static final String ACTION_CHECK_REPORT = "ampuh.mtsn1jepara.action.CHECK_TODAY_REPORT";
+    static final String ACTION_CHECK_REPORT = "matsantura.ampuh.action.CHECK_TODAY_REPORT";
 
     private static final int REQUEST_CODE = 10001;
     private static final int[] REMINDER_HOURS = {10, 12, 14, 16, 18, 20, 22};

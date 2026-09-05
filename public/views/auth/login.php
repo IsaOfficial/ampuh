@@ -92,7 +92,11 @@
           </button>
         </form>
 
-        <p class="auth-footer">&copy; 2026 MTs Negeri 1 Jepara</p>
+        <p class="auth-footer">
+          &copy; 2026 MTs Negeri 1 Jepara
+          <span class="mx-1">•</span>
+          <a href="/kebijakan-privasi">Kebijakan Privasi</a>
+        </p>
       </section>
     </section>
   </main>

@@ -1,4 +1,4 @@
-package ampuh.mtsn1jepara;
+package matsantura.ampuh;
 
 import android.webkit.JavascriptInterface;
 
@@ -7,6 +7,7 @@ public class LoginCredentialBridge {
     private String pendingIdentifier = "";
     private String pendingPassword = "";
     private boolean pendingRemember;
+    private boolean lastRememberedLogin;
 
     public LoginCredentialBridge(CredentialStore credentialStore) {
         this.credentialStore = credentialStore;
@@ -24,16 +25,24 @@ public class LoginCredentialBridge {
         pendingRemember = remember;
 
         if (!remember) {
-            credentialStore.clear();
+            credentialStore.clearAll();
         }
     }
 
-    public void savePendingIfRequested() {
+    public boolean savePendingIfRequested() {
+        boolean remembered = false;
         if (pendingRemember && !pendingIdentifier.isEmpty() && !pendingPassword.isEmpty()) {
             credentialStore.save(pendingIdentifier, pendingPassword);
+            remembered = true;
         }
 
+        lastRememberedLogin = remembered;
         clearPending();
+        return remembered;
+    }
+
+    public boolean shouldRememberDeviceLogin() {
+        return lastRememberedLogin || credentialStore.hasSavedCredentials() || credentialStore.hasAppLoginToken();
     }
 
     public void clearPending() {

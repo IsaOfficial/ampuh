@@ -5,6 +5,7 @@ class Session
     public static function start(): void
     {
         if (session_status() === PHP_SESSION_NONE) {
+            self::configureLifetime();
             session_start();
         }
     }
@@ -80,5 +81,28 @@ class Session
         }
 
         session_destroy();
+    }
+
+    private static function configureLifetime(): void
+    {
+        $days = max(1, (int) (getenv('SESSION_LIFETIME_DAYS') ?: 30));
+        $lifetime = $days * 24 * 60 * 60;
+        $secure = self::isHttps();
+
+        ini_set('session.gc_maxlifetime', (string) $lifetime);
+        session_set_cookie_params([
+            'lifetime' => $lifetime,
+            'path' => '/',
+            'domain' => '',
+            'secure' => $secure,
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+    }
+
+    private static function isHttps(): bool
+    {
+        return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || strtolower($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https';
     }
 }

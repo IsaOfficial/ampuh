@@ -4,8 +4,8 @@ APK WebView untuk aplikasi AMPUH production.
 
 - URL: `https://ampuh.mtsn1jepara.sch.id`
 - Nama aplikasi: `AMPUH`
-- Package: `ampuh.mtsn1jepara`
-- Version: `1.0.1` (`versionCode` 2)
+- Package: `matsantura.ampuh`
+- Version: `1.0.3` (`versionCode` 13)
 
 ## Fitur WebView
 
@@ -15,12 +15,12 @@ APK WebView untuk aplikasi AMPUH production.
 - Halaman error/offline native dengan tombol Coba Lagi dan Buka di Browser.
 - Tombol Back kembali ke halaman sebelumnya; di halaman awal perlu tekan dua kali untuk keluar.
 - Pengingat laporan harian setiap 2 jam pada pukul 10.00-22.00 jika pegawai belum mengirim laporan hari ini.
-- Opsi ingat akun di halaman login untuk mengisi NIP/NIK dan password secara otomatis pada login berikutnya.
+- Opsi ingat akun dan token login perangkat agar pegawai tidak perlu login ulang selama token masih aktif.
 - Link luar domain AMPUH dibuka di browser eksternal.
 - Download file diarahkan ke folder Download perangkat.
 - Upload bukti mendukung kamera, gambar, PDF, dan video.
 
-Catatan: pada Android 13 atau lebih baru, pengguna perlu mengizinkan notifikasi agar pengingat laporan dapat muncul. Pengingat memakai session login WebView, sehingga tidak akan muncul jika pengguna belum login atau session sudah berakhir. Akun yang diingat disimpan di penyimpanan privat aplikasi dan password dienkripsi memakai Android Keystore.
+Catatan: pada Android 13 atau lebih baru, pengguna perlu mengizinkan notifikasi agar pengingat laporan dapat muncul. Akun dan token aplikasi disimpan di penyimpanan privat perangkat dan dienkripsi memakai Android Keystore.
 
 ## Build APK Debug
 
@@ -49,7 +49,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\mobile\android-webview\bui
 Output yang diunggah ke Play Console:
 
 ```text
-mobile/android-webview/playstore/AMPUH-release-v1.0.1-code2.aab
+mobile/android-webview/playstore/AMPUH-release-v1.0.3-code13.aab
 ```
 
 File penting yang harus disimpan aman:

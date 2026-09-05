@@ -4,12 +4,36 @@
 // AUTH
 // =======================================
 $router->get('/', function () {
+    $user = Session::get('user');
+    if (($user['role'] ?? '') === 'admin') {
+        header('Location: /admin/dashboard');
+        exit;
+    }
+    if (($user['role'] ?? '') === 'pegawai') {
+        header('Location: /pegawai/dashboard');
+        exit;
+    }
+
     header('Location: /login');
     exit;
 });
 
 $router->get('/login', function () {
+    $user = Session::get('user');
+    if (($user['role'] ?? '') === 'admin') {
+        header('Location: /admin/dashboard');
+        exit;
+    }
+    if (($user['role'] ?? '') === 'pegawai') {
+        header('Location: /pegawai/dashboard');
+        exit;
+    }
+
     view('auth/login');
+});
+
+$router->get('/kebijakan-privasi', function () {
+    view('legal/privacy');
 });
 
 $router->post('/login', [AuthController::class, 'processLogin'])
@@ -19,6 +43,8 @@ $router->get('/logout', [AuthController::class, 'logout'])
     ->middleware('auth');
 
 $router->get('/verifikasi-laporan', [VerificationController::class, 'verify']);
+$router->get('/app-login', [AppLoginController::class, 'login']);
+$router->get('/api/reminder/status-hari-ini', [ReminderStatusController::class, 'todayStatus']);
 
 // =======================================
 // PEGAWAI
@@ -28,6 +54,8 @@ $router->group('/pegawai', function ($r) {
     // Dashboard
     $r->get('/dashboard', [PegawaiController::class, 'dashboard']);
     $r->get('/laporan/status-hari-ini', [PegawaiController::class, 'todayReportStatus']);
+    $r->get('/reminder-token', [PegawaiReminderController::class, 'issueToken']);
+    $r->get('/app-login-token', [AppLoginController::class, 'issueToken']);
 
     // Laporan
     $r->get('/laporan', [PegawaiLaporanController::class, 'riwayatLaporan']);

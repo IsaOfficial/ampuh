@@ -1,8 +1,10 @@
-package ampuh.mtsn1jepara;
+package matsantura.ampuh;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.DownloadManager;
+import android.content.ClipData;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
@@ -44,15 +46,19 @@ import android.widget.Toast;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URLEncoder;
 
 public class MainActivity extends Activity {
     private static final String HOME_URL = "https://ampuh.mtsn1jepara.sch.id";
+    private static final String DEFAULT_ENTRY_URL = HOME_URL + "/pegawai/dashboard";
+    private static final String APP_LOGIN_URL = HOME_URL + "/app-login";
     private static final int FILE_CHOOSER_REQUEST_CODE = 1001;
     private static final int CAMERA_PERMISSION_REQUEST_CODE = 1002;
     private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 1003;
     private static final int BRAND_GREEN = Color.rgb(0, 132, 61);
     private static final int BRAND_GREEN_DARK = Color.rgb(0, 103, 48);
     private static final int PROGRESS_YELLOW = Color.rgb(246, 194, 62);
+    private static final int VIDEO_CAPTURE_DURATION_LIMIT_SECONDS = 15;
 
     private FrameLayout root;
     private WebView webView;
@@ -120,6 +126,7 @@ public class MainActivity extends Activity {
 
         StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder().build());
         loginCredentialBridge = new LoginCredentialBridge(new CredentialStore(this));
+        cleanupOldCaptureFiles();
         configureWebView();
         if (!requestCameraPermissionIfNeeded()) {
             requestNotificationPermissionIfNeeded();
@@ -130,7 +137,7 @@ public class MainActivity extends Activity {
             splashOverlay.setVisibility(View.GONE);
             webView.restoreState(savedInstanceState);
         } else {
-            webView.loadUrl(HOME_URL);
+            webView.loadUrl(initialEntryUrl());
         }
     }
 
@@ -373,10 +380,36 @@ public class MainActivity extends Activity {
         pageLoadErrored = false;
         showProgress(10);
         if (webView.getUrl() == null) {
-            webView.loadUrl(HOME_URL);
+            webView.loadUrl(initialEntryUrl());
         } else {
             webView.reload();
         }
+    }
+
+    private void refreshDeviceTokensAndCheck(boolean allowAppLoginToken) {
+        Context appContext = getApplicationContext();
+        new Thread(() -> {
+            ReportStatusClient client = new ReportStatusClient(appContext);
+            client.refreshReminderToken();
+            CredentialStore credentialStore = new CredentialStore(appContext);
+            if (allowAppLoginToken || credentialStore.hasAppLoginToken()) {
+                client.refreshAppLoginToken();
+            }
+            ReportReminderReceiver.checkAndNotifyAsync(appContext);
+        }).start();
+    }
+
+    private String initialEntryUrl() {
+        String token = new CredentialStore(this).getAppLoginToken();
+        if (token != null && !token.trim().isEmpty()) {
+            try {
+                return APP_LOGIN_URL + "?token=" + URLEncoder.encode(token.trim(), "UTF-8");
+            } catch (Exception ignored) {
+                return APP_LOGIN_URL;
+            }
+        }
+
+        return DEFAULT_ENTRY_URL;
     }
 
     private void openCurrentPageInBrowser() {
@@ -456,11 +489,11 @@ public class MainActivity extends Activity {
                     pendingPermissionRequest.grant(pendingPermissionRequest.getResources());
                 } else {
                     pendingPermissionRequest.deny();
-                    Toast.makeText(this, "Izin kamera diperlukan untuk mengambil foto bukti.", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, "Izin kamera diperlukan untuk mengambil foto atau video bukti.", Toast.LENGTH_LONG).show();
                 }
                 pendingPermissionRequest = null;
             } else if (!granted) {
-                Toast.makeText(this, "Izin kamera dapat diaktifkan nanti jika ingin mengambil foto langsung.", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "Izin kamera dapat diaktifkan nanti jika ingin mengambil foto atau video langsung.", Toast.LENGTH_LONG).show();
             }
 
             requestNotificationPermissionIfNeeded();
@@ -487,10 +520,15 @@ public class MainActivity extends Activity {
         }
 
         Uri[] results = null;
+        boolean usedCameraResult = false;
         if (resultCode == Activity.RESULT_OK) {
-            if (data == null || data.getData() == null) {
+            if (cameraImageUri != null && hasContent(cameraImageUri)) {
+                results = new Uri[]{cameraImageUri};
+                usedCameraResult = true;
+            } else if (data == null || data.getData() == null) {
                 if (cameraImageUri != null) {
                     results = new Uri[]{cameraImageUri};
+                    usedCameraResult = true;
                 }
             } else if (data.getClipData() != null) {
                 int count = data.getClipData().getItemCount();
@@ -501,6 +539,10 @@ public class MainActivity extends Activity {
             } else {
                 results = new Uri[]{data.getData()};
             }
+        }
+
+        if (cameraImageUri != null && !usedCameraResult) {
+            deleteCameraImageUri(cameraImageUri);
         }
 
         filePathCallback.onReceiveValue(results);
@@ -530,7 +572,7 @@ public class MainActivity extends Activity {
         Toast.makeText(this, "Tekan sekali lagi untuk keluar.", Toast.LENGTH_SHORT).show();
     }
 
-    private Intent createFileChooserIntent() {
+    private Intent createFilePickerIntent() {
         Intent contentIntent = new Intent(Intent.ACTION_GET_CONTENT);
         contentIntent.addCategory(Intent.CATEGORY_OPENABLE);
         contentIntent.setType("*/*");
@@ -541,19 +583,107 @@ public class MainActivity extends Activity {
         });
         contentIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false);
 
-        Intent chooserIntent = Intent.createChooser(contentIntent, "Pilih Bukti");
-        Intent cameraIntent = createCameraIntent();
-        if (cameraIntent != null) {
-            chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Intent[]{cameraIntent});
+        return Intent.createChooser(contentIntent, "Ambil Berkas");
+    }
+
+    private void showEvidencePickerDialog() {
+        LinearLayout options = new LinearLayout(this);
+        options.setOrientation(LinearLayout.VERTICAL);
+        options.setPadding(0, dp(8), 0, dp(8));
+
+        final AlertDialog[] dialogHolder = new AlertDialog[1];
+
+        options.addView(createEvidenceOption("Ambil Gambar", "ic_evidence_camera", v -> {
+            dialogHolder[0].dismiss();
+            launchEvidenceIntent(createCameraIntent(), "Kamera tidak tersedia.");
+        }));
+
+        options.addView(createEvidenceOption("Ambil Video", "ic_evidence_video", v -> {
+            dialogHolder[0].dismiss();
+            launchEvidenceIntent(createVideoCaptureIntent(), "Perekam video tidak tersedia.");
+        }));
+
+        options.addView(createEvidenceOption("Ambil Berkas", "ic_evidence_file", v -> {
+            dialogHolder[0].dismiss();
+            launchEvidenceIntent(createFilePickerIntent(), "Pemilih file tidak tersedia.");
+        }));
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("Pilih Bukti")
+                .setView(options)
+                .setOnCancelListener(d -> cancelFileChooser())
+                .create();
+
+        dialogHolder[0] = dialog;
+        dialog.show();
+    }
+
+    private View createEvidenceOption(String label, String iconName, View.OnClickListener listener) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(dp(20), dp(14), dp(20), dp(14));
+        row.setClickable(true);
+        row.setOnClickListener(listener);
+
+        ImageView icon = new ImageView(this);
+        int iconResource = getResources().getIdentifier(iconName, "drawable", getPackageName());
+        if (iconResource != 0) {
+            icon.setImageResource(iconResource);
+        }
+        LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(dp(28), dp(28));
+        iconParams.rightMargin = dp(14);
+        row.addView(icon, iconParams);
+
+        TextView text = new TextView(this);
+        text.setText(label);
+        text.setTextColor(Color.rgb(31, 41, 55));
+        text.setTextSize(16);
+        text.setTypeface(Typeface.DEFAULT_BOLD);
+        row.addView(text, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+
+        return row;
+    }
+
+    private void launchEvidenceIntent(Intent intent, String unavailableMessage) {
+        if (intent == null) {
+            Toast.makeText(this, unavailableMessage, Toast.LENGTH_SHORT).show();
+            cancelFileChooser();
+            return;
         }
 
-        return chooserIntent;
+        try {
+            startActivityForResult(intent, FILE_CHOOSER_REQUEST_CODE);
+        } catch (ActivityNotFoundException e) {
+            if (cameraImageUri != null) {
+                deleteCameraImageUri(cameraImageUri);
+                cameraImageUri = null;
+            }
+
+            Toast.makeText(this, unavailableMessage, Toast.LENGTH_SHORT).show();
+            cancelFileChooser();
+        }
+    }
+
+    private void cancelFileChooser() {
+        if (cameraImageUri != null) {
+            deleteCameraImageUri(cameraImageUri);
+            cameraImageUri = null;
+        }
+
+        if (filePathCallback != null) {
+            filePathCallback.onReceiveValue(null);
+            filePathCallback = null;
+        }
     }
 
     private Intent createCameraIntent() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
                 && checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            Toast.makeText(this, "Aktifkan izin kamera untuk mengambil foto langsung.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Aktifkan izin kamera untuk mengambil foto atau video langsung.", Toast.LENGTH_SHORT).show();
             return null;
         }
 
@@ -562,15 +692,88 @@ public class MainActivity extends Activity {
             return null;
         }
 
-        try {
-            File imageFile = File.createTempFile("ampuh_upload_", ".jpg", getExternalCacheDir());
-            cameraImageUri = Uri.fromFile(imageFile);
-            cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, cameraImageUri);
-            cameraIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-            return cameraIntent;
-        } catch (IOException e) {
+        cameraImageUri = createCaptureUri("jpg");
+        if (cameraImageUri == null) {
             cameraImageUri = null;
             return null;
+        }
+
+        cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, cameraImageUri);
+        cameraIntent.setClipData(ClipData.newUri(getContentResolver(), "Ambil Gambar", cameraImageUri));
+        cameraIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+        return cameraIntent;
+    }
+
+    private Intent createVideoCaptureIntent() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                && checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            return null;
+        }
+
+        Intent videoIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
+        if (videoIntent.resolveActivity(getPackageManager()) == null) {
+            return null;
+        }
+
+        cameraImageUri = createCaptureUri("mp4");
+        if (cameraImageUri != null) {
+            videoIntent.putExtra(MediaStore.EXTRA_OUTPUT, cameraImageUri);
+            videoIntent.setClipData(ClipData.newUri(getContentResolver(), "Ambil Video", cameraImageUri));
+        }
+
+        videoIntent.putExtra(MediaStore.EXTRA_DURATION_LIMIT, VIDEO_CAPTURE_DURATION_LIMIT_SECONDS);
+        videoIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+        return videoIntent;
+    }
+
+    private Uri createCaptureUri(String extension) {
+        try {
+            File dir = EvidenceFileProvider.captureDirectory(this);
+            if (!dir.exists() && !dir.mkdirs()) {
+                return null;
+            }
+
+            File file = File.createTempFile("ampuh_upload_", "." + extension, dir);
+            return EvidenceFileProvider.uriForFile(this, file);
+        } catch (IOException ignored) {
+            return null;
+        }
+    }
+
+    private boolean hasContent(Uri uri) {
+        try {
+            android.content.res.AssetFileDescriptor descriptor = getContentResolver().openAssetFileDescriptor(uri, "r");
+            if (descriptor == null) {
+                return false;
+            }
+            long length = descriptor.getLength();
+            descriptor.close();
+            return length != 0;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    private void deleteCameraImageUri(Uri uri) {
+        try {
+            getContentResolver().delete(uri, null, null);
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void cleanupOldCaptureFiles() {
+        File dir = EvidenceFileProvider.captureDirectory(this);
+        File[] files = dir.listFiles();
+        if (files == null) {
+            return;
+        }
+
+        long cutoff = System.currentTimeMillis() - (2L * 24L * 60L * 60L * 1000L);
+        for (File file : files) {
+            if (file.isFile() && file.lastModified() < cutoff) {
+                //noinspection ResultOfMethodCallIgnored
+                file.delete();
+            }
         }
     }
 
@@ -588,6 +791,10 @@ public class MainActivity extends Activity {
         return isAmpuhUrl(uri) && "/login".equals(uri.getPath());
     }
 
+    private boolean isLogoutUrl(Uri uri) {
+        return isAmpuhUrl(uri) && "/logout".equals(uri.getPath());
+    }
+
     private boolean isAuthenticatedLandingUrl(String url) {
         if (url == null) {
             return false;
@@ -600,6 +807,15 @@ public class MainActivity extends Activity {
 
         String path = uri.getPath();
         return "/pegawai/dashboard".equals(path) || "/admin/dashboard".equals(path);
+    }
+
+    private boolean isPegawaiLandingUrl(String url) {
+        if (url == null) {
+            return false;
+        }
+
+        Uri uri = Uri.parse(url);
+        return isAmpuhUrl(uri) && "/pegawai/dashboard".equals(uri.getPath());
     }
 
     private void injectCredentialAutofill() {
@@ -653,6 +869,8 @@ public class MainActivity extends Activity {
                     if (saved.identifier && saved.password) {
                       identifier.value = saved.identifier;
                       password.value = saved.password;
+                      checkbox.checked = true;
+                    } else {
                       checkbox.checked = true;
                     }
                   } catch (error) {}
@@ -730,7 +948,11 @@ public class MainActivity extends Activity {
             }
 
             if (isAuthenticatedLandingUrl(url)) {
-                loginCredentialBridge.savePendingIfRequested();
+                boolean rememberedLogin = loginCredentialBridge.savePendingIfRequested();
+                ReminderScheduler.scheduleNext(MainActivity.this);
+                if (isPegawaiLandingUrl(url)) {
+                    refreshDeviceTokensAndCheck(rememberedLogin || loginCredentialBridge.shouldRememberDeviceLogin());
+                }
             } else if (isLoginUrl(url)) {
                 injectCredentialAutofill();
             }
@@ -784,6 +1006,9 @@ public class MainActivity extends Activity {
             String scheme = uri.getScheme();
             if (scheme == null || scheme.equals("http") || scheme.equals("https")) {
                 if (isAmpuhUrl(uri)) {
+                    if (isLogoutUrl(uri)) {
+                        new CredentialStore(MainActivity.this).clearAll();
+                    }
                     return false;
                 }
 
@@ -820,15 +1045,7 @@ public class MainActivity extends Activity {
             }
 
             MainActivity.this.filePathCallback = filePathCallback;
-
-            try {
-                startActivityForResult(createFileChooserIntent(), FILE_CHOOSER_REQUEST_CODE);
-            } catch (ActivityNotFoundException e) {
-                MainActivity.this.filePathCallback = null;
-                Toast.makeText(MainActivity.this, "Pemilih file tidak tersedia.", Toast.LENGTH_SHORT).show();
-                return false;
-            }
-
+            showEvidencePickerDialog();
             return true;
         }
 

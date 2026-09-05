@@ -2,8 +2,6 @@
 
 class DocumentUploadService
 {
-    private const DEFAULT_MAX_SIZE = 5_242_880; // 5MB
-    private const VIDEO_MAX_SIZE = 52_428_800; // 50MB
     private int $maxImageDimension = 1600;
     private int $jpegQuality = 75;
     private int $pngCompression = 6;
@@ -36,7 +34,7 @@ class DocumentUploadService
         'xml'
     ];
 
-    public function validate(array $file, ?int $maxSize = null): string
+    public function validate(array $file): string
     {
         if (!isset($file['error']) || $file['error'] !== UPLOAD_ERR_OK) {
             throw new Exception("Upload file gagal.");
@@ -46,12 +44,6 @@ class DocumentUploadService
 
         if (!$this->isAllowedMime($mime)) {
             throw new Exception("Tipe file tidak valid. Gunakan gambar, PDF, atau video.");
-        }
-
-        $allowedSize = $maxSize ?? $this->maxSizeForMime($mime);
-        if (($file['size'] ?? 0) > $allowedSize) {
-            $limitMb = (int) floor($allowedSize / 1024 / 1024);
-            throw new Exception("Ukuran file maksimal {$limitMb}MB.");
         }
 
         return $mime;
@@ -66,19 +58,11 @@ class DocumentUploadService
         return $mime;
     }
 
-    private function maxSizeForMime(string $mime): int
-    {
-        return str_starts_with($mime, 'video/')
-            ? self::VIDEO_MAX_SIZE
-            : self::DEFAULT_MAX_SIZE;
-    }
-
     public function upload(
         array $file,
-        string $dir,
-        ?int $maxSize = null
+        string $dir
     ): string {
-        $mime = $this->validate($file, $maxSize);
+        $mime = $this->validate($file);
 
         // 4. Pastikan folder ada
         // NORMALISASI PATH

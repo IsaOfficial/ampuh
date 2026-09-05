@@ -2,6 +2,7 @@
 /ampuh.zip
 /backend/*.zip
 /public/*.zip
+/data/
 /public/uploads/*
 !/public/uploads/
 !/public/uploads/.gitkeep
@@ -14,7 +15,27 @@
 !/public/uploads/foto/.gitkeep
 
 .env
+.env.*
+!.env.example
 *.log
 .DS_Store
 Thumbs.db
 /backend/test/
+
+# Android build/signing artifacts
+/mobile/android-webview/build/
+/mobile/android-webview/keystore/
+/mobile/android-webview/playstore/
+/mobile/android-webview/tools/
+/mobile/android-webview/debug.keystore
+/mobile/android-webview/release-signing.properties
+/mobile/build.txt
+
+# Portfolio/export archives
+/public/assets/img/fitur/
+/public/assets/img/fitur.zip
+/public/assets/img/screenshoots/
+*.aab
+*.apk
+*.jks
+*.keystore

@@ -1,4 +1,4 @@
-package ampuh.mtsn1jepara;
+package matsantura.ampuh;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -12,17 +12,28 @@ public class ReportReminderReceiver extends BroadcastReceiver {
         }
 
         PendingResult pendingResult = goAsync();
-        Context appContext = context.getApplicationContext();
+        checkAndNotifyAsync(context.getApplicationContext(), pendingResult, true);
+    }
 
+    public static void checkAndNotifyAsync(Context context) {
+        checkAndNotifyAsync(context.getApplicationContext(), null, false);
+    }
+
+    private static void checkAndNotifyAsync(Context appContext, PendingResult pendingResult, boolean scheduleNext) {
         new Thread(() -> {
             try {
-                ReportStatusClient.TodayReportStatus status = new ReportStatusClient().fetchTodayStatus();
+                ReportStatusClient.TodayReportStatus status = new ReportStatusClient(appContext).fetchTodayStatus();
                 if (status.available && status.authenticated && !status.submitted) {
                     NotificationHelper.showReportReminder(appContext, status.name);
                 }
             } finally {
-                ReminderScheduler.scheduleNext(appContext);
-                pendingResult.finish();
+                if (scheduleNext) {
+                    ReminderScheduler.scheduleNext(appContext);
+                }
+
+                if (pendingResult != null) {
+                    pendingResult.finish();
+                }
             }
         }).start();
     }

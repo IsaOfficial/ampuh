@@ -151,9 +151,7 @@
     }
 
     setTanggal("tanggalDisplay", "tanggalAsli");
-    const EVIDENCE_DEFAULT_MAX_SIZE = 5 * 1024 * 1024;
-    const EVIDENCE_VIDEO_MAX_SIZE = 50 * 1024 * 1024;
-    const EVIDENCE_DEFAULT_HINT = "Gambar/PDF maks. 5MB, video maks. 50MB";
+    const EVIDENCE_DEFAULT_HINT = "Format bukti: gambar, PDF, atau video.";
 
     function evidenceFileKind(file) {
       const mime = (file.type || "").toLowerCase();
@@ -182,14 +180,6 @@
 
       if (kind === "invalid") {
         return "Tipe file tidak valid. Gunakan gambar, PDF, atau video.";
-      }
-
-      if (kind === "video" && file.size > EVIDENCE_VIDEO_MAX_SIZE) {
-        return "Ukuran video maksimal 50MB.";
-      }
-
-      if ((kind === "image" || kind === "pdf") && file.size > EVIDENCE_DEFAULT_MAX_SIZE) {
-        return "Ukuran gambar/PDF maksimal 5MB.";
       }
 
       return "";
@@ -334,7 +324,7 @@
                     <input type="file" name="bukti[]" class="custom-file-input evidence-file-input" accept="image/*,application/pdf,video/*" required>
                     <label class="custom-file-label evidence-file-label" data-browse="Pilih"><i class="fas fa-paperclip mr-1"></i><span>Unggah bukti</span></label>
                 </div>
-                <small class="evidence-upload-hint">Gambar/PDF maks. 5MB, video maks. 50MB</small>
+                <small class="evidence-upload-hint">Format bukti: gambar, PDF, atau video.</small>
             </div>
 
             <div class="col-md-1 mb-2 mt-1 d-flex align-items-start justify-content-end">
